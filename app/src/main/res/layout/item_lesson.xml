@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:padding="12dp">
+
+    <TextView
+        android:id="@+id/itemLessonClassrooms"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:textSize="18sp"
+        tools:text="Н515"
+        tools:textColor="#3578DD"/>
+
+    <TextView
+        android:id="@+id/itemLessonTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textColor="@color/black"
+        android:textStyle="bold"
+        android:layout_marginEnd="12dp"
+        app:layout_constraintEnd_toStartOf="@+id/itemLessonType"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/itemLessonClassrooms"
+        tools:text="Lesson title" />
+
+    <TextView
+        android:id="@+id/itemLessonTeachers"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/itemLessonTitle"
+        android:textStyle="italic"
+        android:textColor="@color/black"
+        tools:text="Teacher name"/>
+
+    <TextView
+        android:id="@+id/itemLessonDates"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/itemLessonTeachers"
+        tools:text="10 Feb - 12 Apr"/>
+
+    <TextView
+        android:id="@+id/itemLessonType"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="@id/itemLessonTitle"
+        app:layout_constraintBottom_toBottomOf="@id/itemLessonTitle"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:paddingTop="2dp"
+        android:paddingBottom="2dp"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:textColor="@color/white"
+        tools:text="Lecture"/>
+
+    <View
+        android:id="@+id/itemScheduleDayBlur"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:background="#9AFFFFFF"
+        android:layout_gravity="center"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@+id/itemLessonDates"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

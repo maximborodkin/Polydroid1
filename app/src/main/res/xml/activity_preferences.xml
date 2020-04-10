@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.preference.PreferenceScreen
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <PreferenceCategory
+        app:title="@string/application"
+        app:iconSpaceReserved="false">
+        <Preference
+            app:key="invalidate_cache"
+            app:title="@string/invalidate_cache"
+            app:iconSpaceReserved="false"/>
+    </PreferenceCategory>
+    <PreferenceCategory
+        app:title="@string/notifications"
+        app:iconSpaceReserved="false">
+        <SwitchPreferenceCompat
+            app:key="enable_notifications"
+            app:defaultValue="true"
+            app:title="@string/enable_notifications"
+            app:iconSpaceReserved="false"/>
+
+        <EditTextPreference
+            app:key="notifications_key"
+            app:title="@string/notifications_key"
+            app:summary="@string/group_or_teacher_to_notify_schedule_changes"
+            app:dependency="enable_notifications"
+            app:dialogTitle="@string/enter_a_group_or_teacher_name"
+            app:iconSpaceReserved="false"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:title="@string/theme"
+        app:iconSpaceReserved="false">
+
+        <SwitchPreferenceCompat
+            app:key="dark_theme"
+            app:title="@string/dark_theme"
+            app:defaultValue="false"
+            app:iconSpaceReserved="false"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:title="@string/about"
+        app:iconSpaceReserved="false">
+
+        <Preference
+            app:key="version"
+            app:title="@string/build_version"
+            app:summary="1.0 SNAPSHOT"
+            app:iconSpaceReserved="false"/>
+    </PreferenceCategory>
+</androidx.preference.PreferenceScreen>

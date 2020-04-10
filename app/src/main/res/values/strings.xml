@@ -1,0 +1,52 @@
+<resources>
+<!--  General  -->
+    <string name="app_name">Polydroid</string>
+    <string name="navigation">Navigation</string>
+    <string name="schedule">Schedule</string>
+    <string name="contacts">Contacts</string>
+    <string name="search">Search</string>
+    <string name="notifications">Notifications</string>
+    <string name="settings">Settings</string>
+
+<!--  Preferences  -->
+    <string name="enable_notifications">Enable notifications</string>
+    <string name="notifications_key">Notifications key</string>
+    <string name="group_or_teacher_to_notify_schedule_changes">Group or teacher name to notify schedule changes</string>
+    <string name="enter_a_group_or_teacher_name">Enter a group or teacher name</string>
+    <string name="build_version">Build version</string>
+    <string name="about">About</string>
+    <string name="theme">Theme</string>
+    <string name="dark_theme">Dark theme</string>
+    <string name="skip">Skip</string>
+    <string name="initialization_helper">After you can change it in settings</string>
+    <string name="initialization_header">You must specify group number or teacher name to get schedule update notifications. You also may search for another schedules, but notifications you will get by this key</string>
+    <string name="group_number_or_teacher_name">Group number or teacher name</string>
+
+<!--  ContactsFragment  -->
+    <string name="contacts_load_error">Unable to get contacts</string>
+    <string name="current_week">Current week</string>
+    <string name="full_schedule">Full schedule</string>
+    <string name="no_lessons_today">No lessons today</string>
+    <string name="monday">Monday</string>
+    <string name="tuesday">Tuesday</string>
+    <string name="wednesday">Wednesday</string>
+    <string name="thursday">Thursday</string>
+    <string name="friday">Friday</string>
+    <string name="saturday">Saturday</string>
+    <string name="application">Application</string>
+    <string name="invalidate_cache">Invalidate cache</string>
+    <string name="cache_size_bytes">Cache size %1$s Bytes</string>
+    <string name="cache_size_kbytes">Cache size %1$s KBytes</string>
+    <string name="cache_size_mbytes">Cache size %1$s MBytes</string>
+
+    <!--  ScheduleFragment  -->
+    <string-array name="days_of_week">
+        <item>Monday</item>
+        <item>Tuesday</item>
+        <item>Wednesday</item>
+        <item>Thursday</item>
+        <item>Friday</item>
+        <item>Saturday</item>
+        <item>Sunday</item>
+    </string-array>
+</resources>
