@@ -22,7 +22,10 @@ import kotlinx.android.synthetic.main.fragment_schedule.*
 import kotlinx.android.synthetic.main.item_lesson.view.*
 import kotlinx.android.synthetic.main.item_schedule_day.view.*
 import ru.maxim.mospolytech.polydroid.R
-import ru.maxim.mospolytech.polydroid.model.*
+import ru.maxim.mospolytech.polydroid.model.Lesson
+import ru.maxim.mospolytech.polydroid.model.Schedule
+import ru.maxim.mospolytech.polydroid.model.SearchObject
+import ru.maxim.mospolytech.polydroid.repository.local.PreferencesManager
 import ru.maxim.mospolytech.polydroid.ui.activity.notifications.NotificationsActivity
 import ru.maxim.mospolytech.polydroid.ui.activity.settings.SettingsActivity
 import ru.maxim.mospolytech.polydroid.util.DateFormatUtils
@@ -36,7 +39,7 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView {
 
     private lateinit var preferenceManager: SharedPreferences
     private val searchObjects = ArrayList<SearchObject>()
-    val currentScheduleMode = ScheduleMode.CurrentWeek
+    private var schedule: Schedule? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,10 +53,10 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         scheduleRefreshLayout.setOnRefreshListener {
-
+            schedulePresenter.loadLastSchedule()
         }
         scheduleTabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
-            override fun onTabSelected(tab: TabLayout.Tab?) { }
+            override fun onTabSelected(tab: TabLayout.Tab?) { schedulePresenter.loadSchedule() }
             override fun onTabReselected(tab: TabLayout.Tab?) {}
             override fun onTabUnselected(tab: TabLayout.Tab?) {}
         })
@@ -64,19 +67,21 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView {
         inflater.inflate(R.menu.menu_schedule_top, menu)
         val searchMenu = menu.findItem(R.id.scheduleMenuSearch)
         val searchView: SearchView = searchMenu.actionView as SearchView
-        val searchObjectsAdapter = SearchArrayAdapter(context!!, searchObjects)
-
+        val searchBarAdapter = SearchArrayAdapter(context!!, searchObjects)
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
+                searchView.clearFocus()
+                searchView.isIconified = true
+                searchMenu.collapseActionView()
                 return if (query.isNullOrEmpty()) false
                 else {
                     val suitableObjects = searchObjects.filter { it.hasEntry(query) }
                     if (suitableObjects.isEmpty()) {
-                        schedulePresenter.searchSchedule(query)
+                        schedulePresenter.loadSchedule("schedule/search?q=$query")
                     }
                     if (suitableObjects.size == 1) {
                         val searchObject = suitableObjects.first()
-                        schedulePresenter.loadSchedule(searchObject.getType(), searchObject.id)
+                        schedulePresenter.loadSchedule("schedule/${searchObject.getType()}/${searchObject.id}")
                     }
                     true
                 }
@@ -84,15 +89,15 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView {
 
             override fun onQueryTextChange(newText: String?) = true
         })
-
+        PreferencesManager.lastRequest?.split("/")?.last()?.let { searchView.setQuery(it, false) }
         (searchView.findViewById(androidx.appcompat.R.id.search_src_text) as SearchView.SearchAutoComplete).apply {
             setTextColor(Color.WHITE)
-            setAdapter(searchObjectsAdapter)
+            setAdapter(searchBarAdapter)
             imeOptions = EditorInfo.IME_NULL
             onItemClickListener = AdapterView.OnItemClickListener { adapterView, _, itemIndex, _ ->
                 val searchItem = adapterView.getItemAtPosition(itemIndex) as SearchObject
                 setText(searchItem.name)
-                schedulePresenter.loadSchedule(searchItem.getType(), searchItem.id)
+                schedulePresenter.loadSchedule("schedule/${searchItem.getType()}/${searchItem.id}")
             }
         }
     }
@@ -105,10 +110,11 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView {
         }
     }
 
-    override fun onScheduleLoaded(type: ScheduleType, schedule: Schedule) {
+    override fun onScheduleLoaded(schedule: Schedule) {
         scheduleRefreshLayout.isRefreshing = false
         scheduleProgressBar.visibility = View.GONE
-        drawSchedule(schedule.grid)
+        this.schedule = schedule
+        drawSchedule()
     }
 
     override fun onSearchObjectsLoaded(searchObjects: List<SearchObject>) {
@@ -119,7 +125,9 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView {
     override fun onScheduleLoadError() {
         scheduleProgressBar.visibility = View.GONE
         scheduleRefreshLayout.isRefreshing = false
-        Toast.makeText(context, "error", Toast.LENGTH_SHORT).show()
+        schedule?.date?.let {
+            Toast.makeText(context, DateFormatUtils.simplifyDate(it), Toast.LENGTH_SHORT).show()
+        }
     }
 
     override fun showLoading() {
@@ -127,11 +135,13 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView {
             scheduleProgressBar.visibility = View.VISIBLE
     }
 
-    private fun drawSchedule(schedule: List<List<List<Lesson>>>) {
-        scheduleListHost.removeAllViews()
-        schedule.forEachIndexed { index, day ->
-            val scheduleDayView = createScheduleDay(resources.getStringArray(R.array.days_of_week)[index], day)
-            scheduleListHost.addView(scheduleDayView)
+    private fun drawSchedule() {
+        if (schedule?.grid != null) {
+            scheduleListHost.removeAllViews()
+            schedule?.grid?.forEachIndexed { index, day ->
+                val scheduleDayView = createScheduleDay(resources.getStringArray(R.array.days_of_week)[index], day)
+                scheduleListHost.addView(scheduleDayView)
+            }
         }
     }
 
@@ -139,14 +149,18 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView {
         (LayoutInflater.from(context).inflate(R.layout.item_schedule_day, scheduleListHost, false) as LinearLayout).apply {
             itemScheduleDayTitle.text = day
             if (lessonsDay.isNullOrEmpty()) itemScheduleDayMessage.text = getString(R.string.no_lessons_today)
+            val now = Date().time
             lessonsDay.forEach { lessonPosition ->
                 lessonPosition.forEach { lesson ->
-                    addView(createLessonItem(lesson, this))
+                    val inRange = lesson.dateFrom < now && lesson.dateTo+1000*60*60*24 > now
+                    if (scheduleTabLayout.selectedTabPosition == 1
+                        || scheduleTabLayout.selectedTabPosition == 0 && inRange)
+                    addView(createLessonItem(lesson, this, !inRange))
                 }
             }
     }
 
-    private fun createLessonItem(lesson: Lesson, parent: ViewGroup) =
+    private fun createLessonItem(lesson: Lesson, parent: ViewGroup, hasBlur: Boolean) =
         LayoutInflater.from(context).inflate(R.layout.item_lesson, parent, false).apply {
             val classroomsString = SpannableStringBuilder().apply {
                 lesson.classrooms.forEach { classroom ->
@@ -178,13 +192,6 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView {
             val dateFrom = DateFormatUtils.simplifyDate(lesson.dateFrom)
             val dateTo = DateFormatUtils.simplifyDate(lesson.dateTo)
             itemLessonDates.text = if (dateFrom == dateTo) dateFrom else "$dateFrom - $dateTo"
-            val now = Date().time
-            if (lesson.dateFrom > now || lesson.dateTo < now)
-                itemScheduleDayBlur.visibility = View.VISIBLE
-
+            if (hasBlur) itemScheduleDayBlur.visibility = View.VISIBLE
         }
-
-    enum class ScheduleMode{
-        CurrentWeek, FullSemester
-    }
 }

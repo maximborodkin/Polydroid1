@@ -10,4 +10,5 @@ object DateFormatUtils : DateUtils() {
 
     fun simplifyDate(date: Long) =
         SimpleDateFormat("dd MMM", currentLocale).format(Date(date)).replace(".", "")
+
 }

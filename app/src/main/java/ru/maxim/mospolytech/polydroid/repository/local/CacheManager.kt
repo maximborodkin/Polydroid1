@@ -1,17 +1,11 @@
 package ru.maxim.mospolytech.polydroid.repository.local
 
 import android.content.Context
-import android.content.Context.MODE_PRIVATE
 import com.google.gson.Gson
-import com.google.gson.JsonSyntaxException
-import okio.IOException
 import ru.maxim.mospolytech.polydroid.model.Schedule
-import ru.maxim.mospolytech.polydroid.model.ScheduleType
 import ru.maxim.mospolytech.polydroid.model.SearchObjects
+import ru.maxim.mospolytech.polydroid.repository.local.CacheManager.context
 import java.io.File
-import java.io.FileNotFoundException
-import java.io.FileOutputStream
-import java.util.*
 
 /**
  *  Singleton object for managing cache files
@@ -25,23 +19,17 @@ object CacheManager {
     private const val searchObjectsFileName = "SearchObjects.json"
     private const val scheduleFileName = "Schedule"
 
-    fun getCachedSearchObjects(): Pair<SearchObjects, Date>? =
+    fun getCachedSearchObjects(): SearchObjects? =
         getObjectFromCache(searchObjectsFileName)
 
     fun saveSearchObjects(searchObjects: SearchObjects) =
         saveObjectToCache(searchObjects, searchObjectsFileName)
 
-    fun getSchedule(type: ScheduleType, id: Int): Pair<Schedule, Date>? =
-        getObjectFromCache("${scheduleFileName}_${type.name}_${id}")
-
-    fun getSchedule(query: String): Pair<Schedule, Date>? =
-        getObjectFromCache("${scheduleFileName}_search_${query}")
-
-    fun saveSchedule(type: ScheduleType, schedule: Schedule, id: Int) =
-        saveObjectToCache(schedule, "${scheduleFileName}_${type}_${id}")
+    fun getSchedule(query: String): Schedule? =
+        getObjectFromCache("${scheduleFileName}_${query.replace("/", "_")}")
 
     fun saveSchedule(schedule: Schedule, query: String) =
-        saveObjectToCache(schedule, "${scheduleFileName}_search_${query}")
+        saveObjectToCache(schedule, "${scheduleFileName}_${query.replace("/", "_")}")
 
     fun getCacheSize(): Long {
         var totalSize = 0L
@@ -52,38 +40,25 @@ object CacheManager {
         return totalSize
     }
 
-    private inline fun <reified T> getObjectFromCache(fileName: String): Pair<T, Date>? {
-        val cacheFileDir = cacheDir.listFiles()
-        val file = cacheFileDir?.find { it.name == fileName }
-        return if (file != null && file.exists() && file.isFile) {
-            val creationDate = Date(file.lastModified())
-            try {
-                val inputStream = file.inputStream()
-                val jsonString = inputStream.bufferedReader().use { it.readText() }
-                val schedule = Gson().fromJson(jsonString, T::class.java)
-                Pair(schedule, creationDate)
-            } catch(e: IOException) {
-                e.printStackTrace()
-                null
-            } catch (e: JsonSyntaxException){
-                e.printStackTrace()
-                null
+    private inline fun <reified T> getObjectFromCache(fileName: String): T? {
+        try {
+            context.openFileInput(fileName).use {
+                val jsonString = it.bufferedReader().use { reader -> reader.readText() }
+                return Gson().fromJson(jsonString, T::class.java)
             }
-        } else null
+        } catch (e: Exception){
+            return null
+        }
     }
 
     private inline fun <reified T> saveObjectToCache(obj: T, fileName: String) {
-        var fileOutputStream: FileOutputStream? = null
         try {
-            fileOutputStream = context.openFileOutput(fileName, MODE_PRIVATE)
-            val jsonString = Gson().toJson(obj)
-            fileOutputStream.write(jsonString.toByteArray())
-        } catch (e: IOException) {
+            context.openFileOutput(fileName, Context.MODE_PRIVATE).use {
+                val jsonString = Gson().toJson(obj)
+                it.write(jsonString.toByteArray())
+            }
+        } catch (e: Exception) {
             e.printStackTrace()
-        } catch (e: FileNotFoundException) {
-            e.printStackTrace()
-        } finally {
-            fileOutputStream?.close()
         }
     }
 }

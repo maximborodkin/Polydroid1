@@ -5,5 +5,5 @@ class Classroom(
     name: String,
     val color: String
 ) : SearchObject(id, name) {
-    override fun getType() = ScheduleType.Classroom
+    override fun getType() = "classroom"
 }

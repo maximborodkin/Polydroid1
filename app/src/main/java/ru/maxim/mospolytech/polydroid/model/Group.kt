@@ -5,5 +5,5 @@ class Group(
     name: String,
     val isEvening: Boolean
 ) : SearchObject(id, name) {
-    override fun getType() = ScheduleType.Group
+    override fun getType() = "group"
 }

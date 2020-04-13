@@ -4,5 +4,5 @@ class Teacher(
     id: Int,
     name: String
 ) : SearchObject(id, name) {
-    override fun getType() = ScheduleType.Teacher
+    override fun getType() = "teacher"
 }
