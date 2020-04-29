@@ -5,6 +5,11 @@
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
         <item name="autoCompleteTextViewStyle">@style/SearchItemLight</item>
+        <item name="floatingActionButtonStyle">@style/FloatingActionButtonLight</item>
+    </style>
+
+    <style name="FloatingActionButtonLight" parent="Widget.MaterialComponents.FloatingActionButton">
+        <item name="backgroundTint">@color/white</item>
     </style>
 
     <style name="SearchItemLight" parent="Widget.AppCompat.Light.AutoCompleteTextView">

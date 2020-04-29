@@ -13,4 +13,6 @@
     <color name="creditBackground">#852E13</color>
     <color name="otherBackground">#E4B659</color>
     <color name="grey">#666666</color>
+    <color name="currentDayBackground">#EAF5FF</color>
+    <color name="dateButtonTextColor">#3E7EE6</color>
 </resources>

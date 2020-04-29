@@ -1,5 +1,6 @@
 package ru.maxim.mospolytech.polydroid.ui.fragment.schedule
 
+import android.util.Log
 import com.arellomobile.mvp.InjectViewState
 import com.arellomobile.mvp.MvpPresenter
 import kotlinx.coroutines.CoroutineScope
@@ -8,8 +9,10 @@ import kotlinx.coroutines.launch
 import ru.maxim.mospolytech.polydroid.model.Schedule
 import ru.maxim.mospolytech.polydroid.repository.local.CacheManager
 import ru.maxim.mospolytech.polydroid.repository.local.PreferencesManager
+import ru.maxim.mospolytech.polydroid.repository.remote.RetrofitClient
 import ru.maxim.mospolytech.polydroid.repository.remote.service.ScheduleService
 import ru.maxim.mospolytech.polydroid.repository.remote.service.SearchObjectsService
+import ru.maxim.mospolytech.polydroid.util.PermissionManager
 import java.util.*
 
 @InjectViewState
@@ -17,18 +20,57 @@ class SchedulePresenter : MvpPresenter<ScheduleView>(), CoroutineScope by MainSc
 
     private val scheduleService = ScheduleService()
     private val searchObjectsService = SearchObjectsService()
-    private lateinit var schedule: Schedule
 
     override fun onFirstViewAttach() {
         super.onFirstViewAttach()
         loadSuggestions()
-        loadLastSchedule()
+        initView()
     }
 
-    fun loadLastSchedule(){
+    /**
+     * View initializing method
+     * Calls only on first view attach
+     */
+    private fun initView() {
         val lastRequest = PreferencesManager.lastRequest
-        if (!lastRequest.isNullOrEmpty()){
-            loadSchedule(lastRequest)
+        if (lastRequest.isNullOrEmpty()) {
+            viewState.showStartScreen()
+            return
+        }
+        val cachedSchedule = loadFromCache(lastRequest)
+        if (cachedSchedule != null) {
+            Log.i("PRSENTER", cachedSchedule.id.toString() + " " + lastRequest)
+            viewState.drawSchedule(cachedSchedule)
+            if (!isActual(cachedSchedule.date)) {
+                loadFromServer(lastRequest, cachedSchedule.date, false)
+            }
+        } else {
+            Log.i("PRSENTER", "lr: $lastRequest")
+            loadFromServer(lastRequest, null, false)
+        }
+    }
+
+    /**
+     * Calls from view by executing SearchBar, pull to refresh or refresh button on notification bar
+     * @param query is null in two last cases
+     */
+    fun loadSchedule(query: String?) {
+        if (query == null) { // update
+            val lastRequest = PreferencesManager.lastRequest
+            if (lastRequest.isNullOrEmpty())
+                viewState.showStartScreen()
+            else
+                loadFromServer(lastRequest, null, true)
+        } else { // search
+            val cachedSchedule = loadFromCache(query)
+            if (cachedSchedule != null) {
+                viewState.drawSchedule(cachedSchedule)
+                if (!isActual(cachedSchedule.date)) {
+                    loadFromServer(query, cachedSchedule.date, false)
+                }
+            } else {
+                loadFromServer(query, null, false)
+            }
         }
     }
 
@@ -36,7 +78,7 @@ class SchedulePresenter : MvpPresenter<ScheduleView>(), CoroutineScope by MainSc
         val cachedSearchObjects = CacheManager.getCachedSearchObjects()
         if (cachedSearchObjects != null) {
             viewState.onSearchObjectsLoaded(cachedSearchObjects.toArrayList())
-            if (isActual(cachedSearchObjects.date))return
+            if (isActual(cachedSearchObjects.date)) return
         }
         launch {
             try {
@@ -46,32 +88,47 @@ class SchedulePresenter : MvpPresenter<ScheduleView>(), CoroutineScope by MainSc
         }
     }
 
-    fun loadSchedule(query: String) {
-        viewState.showLoading()
-
+    private fun loadFromCache(query: String): Schedule? {
         val cachedSchedule = CacheManager.getSchedule(query)
-        if (cachedSchedule != null){
-            schedule = cachedSchedule
-            viewState.onScheduleLoaded(schedule)
-            PreferencesManager.lastRequest = query
-            if (isActual(cachedSchedule.date)) {
-                return
-            }
-        }
-        launch {
-            try {
-                schedule = scheduleService.getSchedule(query)
-                viewState.onScheduleLoaded(schedule)
-                CacheManager.saveSchedule(schedule, query)
-            }catch (e: Exception) {
-                viewState.onScheduleLoadError()
-            }
-        }
+        if (cachedSchedule != null) PreferencesManager.lastRequest = query
+        return cachedSchedule
     }
 
-    fun loadSchedule() {
-        if (::schedule.isInitialized)
-            viewState.onScheduleLoaded(schedule)
+    private fun loadFromServer(query: String, cachedScheduleTime: Long?, isUpdate: Boolean) {
+        val hasANSPermission = PermissionManager.hasANSPermission()
+        val hasInternetPermission = PermissionManager.hasInternetPermission()
+        val isOnline = if (hasANSPermission) RetrofitClient.isOnline() else true
+
+        if (!hasInternetPermission){
+            viewState.showPermissionNotification()
+            return
+        }
+
+        if (isOnline){
+            if (cachedScheduleTime == null && !isUpdate)
+                viewState.showLoading()
+            else
+                viewState.showLoadingNotification()
+
+            launch {
+                try {
+                    val schedule = scheduleService.getSchedule(query)
+                    viewState.drawSchedule(schedule)
+                    PreferencesManager.lastRequest = query
+                    CacheManager.saveSchedule(schedule, query)
+                } catch (e: Exception) {
+                    if (cachedScheduleTime == null)
+                        viewState.showNoConnectionNotification()
+                    else
+                        viewState.showTimeNotification(cachedScheduleTime)
+                }
+            }
+        } else {
+            if (cachedScheduleTime == null)
+                viewState.showNoConnectionNotification()
+            else
+                viewState.showTimeNotification(cachedScheduleTime)
+        }
     }
 
     /**

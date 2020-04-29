@@ -7,12 +7,47 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:padding="12dp">
 
+    <LinearLayout
+        android:id="@+id/itemLessonTimeDivider"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:orientation="horizontal">
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1"
+            android:layout_gravity="center_vertical"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:background="@color/grey"/>
+
+        <TextView
+            android:id="@+id/itemLessonTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="6dp"
+            android:paddingEnd="6dp"
+            tools:text="9:00 - 10:30"/>
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1"
+            android:layout_gravity="center_vertical"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:background="@color/grey"/>
+    </LinearLayout>
     <TextView
         android:id="@+id/itemLessonClassrooms"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/itemLessonTimeDivider"
         android:textSize="18sp"
         tools:text="Н515"
         tools:textColor="#3578DD"/>
@@ -70,6 +105,6 @@
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="@+id/itemLessonDates"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/itemLessonTimeDivider" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

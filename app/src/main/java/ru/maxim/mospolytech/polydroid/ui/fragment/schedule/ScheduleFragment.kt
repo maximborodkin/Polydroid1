@@ -1,22 +1,25 @@
 package ru.maxim.mospolytech.polydroid.ui.fragment.schedule
 
 import android.content.Intent
-import android.content.SharedPreferences
 import android.graphics.Color
 import android.os.Bundle
-import android.text.Spannable.SPAN_INCLUSIVE_INCLUSIVE
 import android.text.SpannableStringBuilder
+import android.text.Spanned
+import android.text.Spanned.SPAN_INCLUSIVE_INCLUSIVE
 import android.text.method.LinkMovementMethod
 import android.text.style.ForegroundColorSpan
+import android.text.style.ImageSpan
+import android.util.Log
 import android.view.*
 import android.view.inputmethod.EditorInfo
 import android.widget.AdapterView
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.widget.SearchView
-import androidx.preference.PreferenceManager
+import androidx.core.content.ContextCompat
 import com.arellomobile.mvp.MvpAppCompatFragment
 import com.arellomobile.mvp.presenter.InjectPresenter
+import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
 import kotlinx.android.synthetic.main.fragment_schedule.*
 import kotlinx.android.synthetic.main.item_lesson.view.*
@@ -25,7 +28,6 @@ import ru.maxim.mospolytech.polydroid.R
 import ru.maxim.mospolytech.polydroid.model.Lesson
 import ru.maxim.mospolytech.polydroid.model.Schedule
 import ru.maxim.mospolytech.polydroid.model.SearchObject
-import ru.maxim.mospolytech.polydroid.repository.local.PreferencesManager
 import ru.maxim.mospolytech.polydroid.ui.activity.notifications.NotificationsActivity
 import ru.maxim.mospolytech.polydroid.ui.activity.settings.SettingsActivity
 import ru.maxim.mospolytech.polydroid.util.DateFormatUtils
@@ -36,30 +38,48 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView {
 
     @InjectPresenter
     lateinit var schedulePresenter: SchedulePresenter
-
-    private lateinit var preferenceManager: SharedPreferences
     private val searchObjects = ArrayList<SearchObject>()
-    private var schedule: Schedule? = null
+    private val currentDayIndex: Int = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)-1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
-        preferenceManager = PreferenceManager.getDefaultSharedPreferences(context)
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
         inflater.inflate(R.layout.fragment_schedule, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
         scheduleRefreshLayout.setOnRefreshListener {
-            schedulePresenter.loadLastSchedule()
+            schedulePresenter.loadSchedule(null)
+
         }
+
         scheduleTabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
-            override fun onTabSelected(tab: TabLayout.Tab?) { schedulePresenter.loadSchedule() }
+            override fun onTabSelected(tab: TabLayout.Tab?) { schedulePresenter.loadSchedule(null) }
             override fun onTabReselected(tab: TabLayout.Tab?) {}
             override fun onTabUnselected(tab: TabLayout.Tab?) {}
         })
+
+        scheduleStartMessage.text = SpannableStringBuilder().apply {
+            val message = getString(R.string.schedule_start_message)
+            append(message)
+            setSpan(
+                ImageSpan(context!!, R.drawable.ic_search_grey_24dp),
+                message.indexOf("%icon%") + "%icon%".length,
+                message.indexOf("%icon%") + "%icon%".length + 1,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
+
+        scheduleDateBtn.setOnClickListener {
+            val scheduleDayView = view.findViewById<LinearLayout>(0x999999+currentDayIndex)
+            if (scheduleDayView != null){
+                scheduleScrollView.smoothScrollTo(0, scheduleDayView.top)
+            }
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -89,7 +109,7 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView {
 
             override fun onQueryTextChange(newText: String?) = true
         })
-        PreferencesManager.lastRequest?.split("/")?.last()?.let { searchView.setQuery(it, false) }
+
         (searchView.findViewById(androidx.appcompat.R.id.search_src_text) as SearchView.SearchAutoComplete).apply {
             setTextColor(Color.WHITE)
             setAdapter(searchBarAdapter)
@@ -110,58 +130,137 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView {
         }
     }
 
-    override fun onScheduleLoaded(schedule: Schedule) {
+    override fun showStartScreen() {
+        Log.i("SCHEDULE", "showStartScreen")
+
         scheduleRefreshLayout.isRefreshing = false
         scheduleProgressBar.visibility = View.GONE
-        this.schedule = schedule
-        drawSchedule()
+        scheduleNotificationLayout.visibility = View.GONE
+        scheduleStartMessage.visibility = View.VISIBLE
     }
 
-    override fun onSearchObjectsLoaded(searchObjects: List<SearchObject>) {
-        this.searchObjects.clear()
-        this.searchObjects.addAll(searchObjects)
+    override fun onSearchObjectsLoaded(searchObjectsList: List<SearchObject>) {
+        searchObjects.clear()
+        searchObjects.addAll(searchObjectsList)
     }
 
-    override fun onScheduleLoadError() {
-        scheduleProgressBar.visibility = View.GONE
+    override fun showLoadingNotification() {
+        Log.i("SCHEDULE", "showLoadingNotification")
+
         scheduleRefreshLayout.isRefreshing = false
-        schedule?.date?.let {
-            Toast.makeText(context, DateFormatUtils.simplifyDate(it), Toast.LENGTH_SHORT).show()
-        }
+        scheduleNotificationLayout.visibility = View.VISIBLE
+        scheduleProgressBar.visibility = View.GONE
+        scheduleNotificationTitle.text = getString(R.string.loading_schedule)
+    }
+
+    override fun showNoConnectionNotification() {
+        Log.i("SCHEDULE", "showNoConnectionNotification")
+
+        scheduleRefreshLayout.isRefreshing = false
+        scheduleProgressBar.visibility = View.GONE
+        scheduleNotificationTitle.text = getString(R.string.no_internet_connection)
+        scheduleNotificationLayout.visibility = View.VISIBLE
+    }
+
+    override fun showNetworkErrorNotification() {
+        Log.i("SCHEDULE", "showNetworkErrorNotification")
+
+        scheduleRefreshLayout.isRefreshing = false
+        scheduleNotificationLayout.visibility = View.VISIBLE
+        scheduleProgressBar.visibility = View.GONE
+        scheduleNotificationTitle.text = getString(R.string.loading_error)
+    }
+
+    override fun showPermissionNotification() {
+        Snackbar
+            .make(scheduleRefreshLayout, R.string.permission_notification, Snackbar.LENGTH_LONG)
+            .setAction(R.string.close) {
+                Toast.makeText(context, "close", Toast.LENGTH_SHORT).show()
+            }
+            .setAction(R.string.settings) {
+                Toast.makeText(context, "settings", Toast.LENGTH_SHORT).show()
+            }
+            .show()
+    }
+
+    override fun showTimeNotification(time: Long) {
+        Log.i("SCHEDULE", "showTimeNotification")
+
+        scheduleRefreshLayout.isRefreshing = false
+        scheduleProgressBar.visibility = View.GONE
+        scheduleNotificationLayout.visibility = View.VISIBLE
+        scheduleNotificationTitle.text =
+            getString(R.string.cached_schedule, DateFormatUtils.simplifyDate(time))
     }
 
     override fun showLoading() {
-        if (!scheduleRefreshLayout.isRefreshing)
-            scheduleProgressBar.visibility = View.VISIBLE
+        Log.i("SCHEDULE", "showLoading")
+
+        scheduleStartMessage.visibility = View.GONE
+        scheduleProgressBar.visibility = View.VISIBLE
     }
 
-    private fun drawSchedule() {
-        if (schedule?.grid != null) {
-            scheduleListHost.removeAllViews()
-            schedule?.grid?.forEachIndexed { index, day ->
-                val scheduleDayView = createScheduleDay(resources.getStringArray(R.array.days_of_week)[index], day)
-                scheduleListHost.addView(scheduleDayView)
-            }
+    override fun drawSchedule(schedule: Schedule) {
+        Log.i("SCHEDULE", "drawSchedule")
+        scheduleRefreshLayout.isRefreshing = false
+        scheduleProgressBar.visibility = View.GONE
+        scheduleNotificationLayout.visibility = View.GONE
+        scheduleListHost.removeAllViews()
+        schedule.grid.forEachIndexed { index, day ->
+            var lessonsCount = 0
+            day.forEach { lessonsCount += it.size }
+            if (!(index == 6 && lessonsCount == 0))
+                scheduleListHost.addView(createScheduleDay(index, day))
         }
     }
 
-    private fun createScheduleDay(day: String, lessonsDay: List<List<Lesson>>) =
+    /**
+     * Inflates and fills schedule day view [R.layout.item_schedule_day]
+     * @param dayIndex is day of week name
+     * @param lessonsDay list of [Lesson] objects grouped by time
+     * @return [ViewGroup] [R.layout.item_schedule_day]
+     */
+    private fun createScheduleDay(dayIndex: Int, lessonsDay: List<List<Lesson>>) =
         (LayoutInflater.from(context).inflate(R.layout.item_schedule_day, scheduleListHost, false) as LinearLayout).apply {
-            itemScheduleDayTitle.text = day
+            id = 0x999999+dayIndex
+            if (dayIndex == currentDayIndex) {
+                setBackgroundColor(ContextCompat.getColor(context, R.color.currentDayBackground))
+            }
+            itemScheduleDayTitle.text = resources.getStringArray(R.array.days_of_week)[dayIndex]
             if (lessonsDay.isNullOrEmpty()) itemScheduleDayMessage.text = getString(R.string.no_lessons_today)
             val now = Date().time
-            lessonsDay.forEach { lessonPosition ->
-                lessonPosition.forEach { lesson ->
+            lessonsDay.forEachIndexed {index,  lessonPosition -> // Several lessons grouped by time range
+                var lessonsCounter = 0
+                lessonPosition.forEach {lesson -> // One lesson
                     val inRange = lesson.dateFrom < now && lesson.dateTo+1000*60*60*24 > now
                     if (scheduleTabLayout.selectedTabPosition == 1
-                        || scheduleTabLayout.selectedTabPosition == 0 && inRange)
-                    addView(createLessonItem(lesson, this, !inRange))
+                        || scheduleTabLayout.selectedTabPosition == 0 && inRange) {
+                        addView(createLessonItem(lesson, this, !inRange, index, lessonsCounter == 0))
+                        lessonsCounter++
+                    }
                 }
             }
     }
 
-    private fun createLessonItem(lesson: Lesson, parent: ViewGroup, hasBlur: Boolean) =
+    /**
+     * Inflates and fills lesson item view [R.layout.item_lesson]
+     * @param lesson is [Lesson] object
+     * @param parent is [ViewGroup] that should contain this view
+     * @param hasBlur turns on semitransparent foreground view
+     * @param hasTime turns on top line with time TextView
+     * @return [View] [R.layout.item_lesson]
+     */
+    private fun createLessonItem(lesson: Lesson, parent: ViewGroup, hasBlur: Boolean, number: Int, hasTime: Boolean) =
         LayoutInflater.from(context).inflate(R.layout.item_lesson, parent, false).apply {
+            if (!hasTime) {
+                itemLessonTimeDivider.visibility = View.GONE
+            } else {
+                itemLessonTimeDivider.visibility = View.VISIBLE
+                val time = resources.getStringArray(
+                    if (lesson.group.isEvening) R.array.time_evening else R.array.time_morning
+                )[number]
+                itemLessonTime.text = time
+            }
             val classroomsString = SpannableStringBuilder().apply {
                 lesson.classrooms.forEach { classroom ->
                     append(classroom.name).append(" ")

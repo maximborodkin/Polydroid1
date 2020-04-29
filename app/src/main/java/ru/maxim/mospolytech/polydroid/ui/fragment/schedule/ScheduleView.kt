@@ -6,8 +6,13 @@ import ru.maxim.mospolytech.polydroid.model.SearchObject
 
 interface ScheduleView : MvpView {
 
-    fun onScheduleLoaded(schedule: Schedule)
-    fun onSearchObjectsLoaded(searchObjects: List<SearchObject>)
-    fun onScheduleLoadError()
+    fun showStartScreen()
+    fun onSearchObjectsLoaded(searchObjectsList: List<SearchObject>)
+    fun drawSchedule(schedule: Schedule)
+    fun showLoadingNotification()
+    fun showNoConnectionNotification()
+    fun showNetworkErrorNotification()
+    fun showPermissionNotification()
+    fun showTimeNotification(time: Long)
     fun showLoading()
 }

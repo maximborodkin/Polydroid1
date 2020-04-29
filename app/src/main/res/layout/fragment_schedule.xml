@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+    android:id="@+id/scheduleRefreshLayout"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/scheduleRefreshLayout"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -31,6 +32,26 @@
                 android:text="@string/full_schedule"/>
         </com.google.android.material.tabs.TabLayout>
 
+        <LinearLayout
+            android:id="@+id/scheduleNotificationLayout"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            app:layout_constraintTop_toBottomOf="@id/scheduleTabLayout"
+            android:background="#E66359">
+
+                <TextView
+                    android:id="@+id/scheduleNotificationTitle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/white"
+                    android:textSize="18sp"
+                    android:layout_weight="1"
+                    android:maxLines="3"
+                    android:layout_gravity="center_vertical"
+                    android:layout_marginStart="12dp"
+                    tools:text="Loading..."/>
+        </LinearLayout>
+
         <ProgressBar
             android:id="@+id/scheduleProgressBar"
             android:layout_width="wrap_content"
@@ -40,14 +61,29 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
+        
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/scheduleStartMessage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:paddingStart="32dp"
+            android:paddingEnd="32dp"
+            android:textAlignment="center"
+            android:textSize="16sp"
+            tools:text="Click 'icon' for search group, teacher or classroom schedule" />
 
         <androidx.core.widget.NestedScrollView
+            android:id="@+id/scheduleScrollView"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             app:layout_constraintVertical_weight="1"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/scheduleTabLayout"
+            app:layout_constraintTop_toBottomOf="@id/scheduleNotificationLayout"
             app:layout_constraintBottom_toBottomOf="parent">
 
             <LinearLayout
@@ -57,5 +93,14 @@
                 android:background="#CCCCCC"
                 android:orientation="vertical"/>
         </androidx.core.widget.NestedScrollView>
+
+        <ru.maxim.mospolytech.polydroid.ui.view.FloatingDateButton
+            android:id="@+id/scheduleDateBtn"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="16dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
