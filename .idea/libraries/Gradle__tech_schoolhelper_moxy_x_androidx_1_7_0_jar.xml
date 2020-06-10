@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Gradle: tech.schoolhelper:moxy-x-androidx:1.7.0@jar">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/tech.schoolhelper/moxy-x-androidx/1.7.0/93ea95cb84d97aa61171473046d5bf4ffeb8c053/moxy-x-androidx-1.7.0.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/tech.schoolhelper/moxy-x-androidx/1.7.0/e8f4274cb5b81a23bf70978afe417ac35c822540/moxy-x-androidx-1.7.0-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/tech.schoolhelper/moxy-x-androidx/1.7.0/58ba68a6b43ffa509b009f6b8c791515b5ef624c/moxy-x-androidx-1.7.0-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

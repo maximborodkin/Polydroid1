@@ -19,8 +19,8 @@
             app:iconSpaceReserved="false"/>
 
         <EditTextPreference
-            app:key="notifications_key"
-            app:title="@string/notifications_key"
+            app:key="notifications_target"
+            app:title="@string/notifications_target"
             app:summary="@string/group_or_teacher_to_notify_schedule_changes"
             app:dependency="enable_notifications"
             app:dialogTitle="@string/enter_a_group_or_teacher_name"

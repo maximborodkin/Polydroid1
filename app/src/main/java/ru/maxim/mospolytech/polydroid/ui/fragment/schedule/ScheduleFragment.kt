@@ -1,5 +1,6 @@
 package ru.maxim.mospolytech.polydroid.ui.fragment.schedule
 
+import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
@@ -27,6 +28,7 @@ import kotlinx.android.synthetic.main.item_schedule_day.view.*
 import ru.maxim.mospolytech.polydroid.R
 import ru.maxim.mospolytech.polydroid.model.Lesson
 import ru.maxim.mospolytech.polydroid.model.Schedule
+import ru.maxim.mospolytech.polydroid.model.ScheduleType
 import ru.maxim.mospolytech.polydroid.model.SearchObject
 import ru.maxim.mospolytech.polydroid.ui.activity.notifications.NotificationsActivity
 import ru.maxim.mospolytech.polydroid.ui.activity.settings.SettingsActivity
@@ -34,19 +36,22 @@ import ru.maxim.mospolytech.polydroid.util.DateFormatUtils
 import java.util.*
 import kotlin.collections.ArrayList
 
-class ScheduleFragment : MvpAppCompatFragment(), ScheduleView {
+class ScheduleFragment : MvpAppCompatFragment(), ScheduleView,
+    ScheduleDialogFragment.OnItemClickListener {
 
     @InjectPresenter
     lateinit var schedulePresenter: SchedulePresenter
     private val searchObjects = ArrayList<SearchObject>()
-    private val currentDayIndex: Int = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)-1
+    private val currentDayIndex: Int = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)-2
+    private lateinit var currentScheduleType: ScheduleType
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
+                              savedInstanceState: Bundle?): View =
         inflater.inflate(R.layout.fragment_schedule, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -54,7 +59,6 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView {
 
         scheduleRefreshLayout.setOnRefreshListener {
             schedulePresenter.loadSchedule(null)
-
         }
 
         scheduleTabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
@@ -91,7 +95,6 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView {
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
                 searchView.clearFocus()
-                searchView.isIconified = true
                 searchMenu.collapseActionView()
                 return if (query.isNullOrEmpty()) false
                 else {
@@ -101,7 +104,8 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView {
                     }
                     if (suitableObjects.size == 1) {
                         val searchObject = suitableObjects.first()
-                        schedulePresenter.loadSchedule("schedule/${searchObject.getType()}/${searchObject.id}")
+                        schedulePresenter
+                            .loadSchedule("schedule/${searchObject.getType()}/${searchObject.id}")
                     }
                     true
                 }
@@ -110,7 +114,8 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView {
             override fun onQueryTextChange(newText: String?) = true
         })
 
-        (searchView.findViewById(androidx.appcompat.R.id.search_src_text) as SearchView.SearchAutoComplete).apply {
+        (searchView.findViewById(androidx.appcompat.R.id.search_src_text)
+                as SearchView.SearchAutoComplete).apply {
             setTextColor(Color.WHITE)
             setAdapter(searchBarAdapter)
             imeOptions = EditorInfo.IME_NULL
@@ -124,8 +129,14 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when(item.itemId){
-            R.id.scheduleMenuNotifications -> { startActivity(Intent(context, NotificationsActivity::class.java)); true }
-            R.id.scheduleMenuSettings -> { startActivity(Intent(context, SettingsActivity::class.java)); true }
+            R.id.scheduleMenuNotifications -> {
+                startActivity(Intent(context, NotificationsActivity::class.java))
+                true
+            }
+            R.id.scheduleMenuSettings -> {
+                startActivity(Intent(context, SettingsActivity::class.java))
+                true
+            }
             else -> false
         }
     }
@@ -142,6 +153,7 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView {
     override fun onSearchObjectsLoaded(searchObjectsList: List<SearchObject>) {
         searchObjects.clear()
         searchObjects.addAll(searchObjectsList)
+        activity?.invalidateOptionsMenu()
     }
 
     override fun showLoadingNotification() {
@@ -206,6 +218,13 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView {
         scheduleProgressBar.visibility = View.GONE
         scheduleNotificationLayout.visibility = View.GONE
         scheduleListHost.removeAllViews()
+        activity?.title = schedule.title
+        currentScheduleType = when(schedule.type) {
+            "teacher" -> ScheduleType.Teacher
+            "classroom" -> ScheduleType.Classroom
+            else -> ScheduleType.Group
+        }
+
         schedule.grid.forEachIndexed { index, day ->
             var lessonsCount = 0
             day.forEach { lessonsCount += it.size }
@@ -221,7 +240,8 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView {
      * @return [ViewGroup] [R.layout.item_schedule_day]
      */
     private fun createScheduleDay(dayIndex: Int, lessonsDay: List<List<Lesson>>) =
-        (LayoutInflater.from(context).inflate(R.layout.item_schedule_day, scheduleListHost, false) as LinearLayout).apply {
+        (LayoutInflater.from(context).inflate(R.layout.item_schedule_day, scheduleListHost, false)
+                as LinearLayout).apply {
             id = 0x999999+dayIndex
             if (dayIndex == currentDayIndex) {
                 setBackgroundColor(ContextCompat.getColor(context, R.color.currentDayBackground))
@@ -229,68 +249,101 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView {
             itemScheduleDayTitle.text = resources.getStringArray(R.array.days_of_week)[dayIndex]
             if (lessonsDay.isNullOrEmpty()) itemScheduleDayMessage.text = getString(R.string.no_lessons_today)
             val now = Date().time
-            lessonsDay.forEachIndexed {index,  lessonPosition -> // Several lessons grouped by time range
+            //Several lessons grouped by time range
+            lessonsDay.forEachIndexed {index,  lessonPosition ->
                 var lessonsCounter = 0
-                lessonPosition.forEach {lesson -> // One lesson
+                // One lesson
+                lessonPosition.forEach {lesson ->
                     val inRange = lesson.dateFrom < now && lesson.dateTo+1000*60*60*24 > now
                     if (scheduleTabLayout.selectedTabPosition == 1
                         || scheduleTabLayout.selectedTabPosition == 0 && inRange) {
-                        addView(createLessonItem(lesson, this, !inRange, index, lessonsCounter == 0))
+                        val lessonItem = createLessonItem(context, lesson, currentScheduleType,
+                            this, !inRange, index, lessonsCounter==0).apply {
+                            setOnClickListener {
+                                val objects = ArrayList<SearchObject>().apply {
+                                    addAll(lesson.classrooms)
+                                    addAll(lesson.teachers)
+                                    if (currentScheduleType != ScheduleType.Group) add(lesson.group)
+                                }
+                                ScheduleDialogFragment
+                                    .instance(objects, this@ScheduleFragment)
+                                    .show(childFragmentManager, "ScheduleDialogFragment")
+                            }
+                        }
+                        addView(lessonItem)
                         lessonsCounter++
                     }
                 }
             }
     }
 
-    /**
-     * Inflates and fills lesson item view [R.layout.item_lesson]
-     * @param lesson is [Lesson] object
-     * @param parent is [ViewGroup] that should contain this view
-     * @param hasBlur turns on semitransparent foreground view
-     * @param hasTime turns on top line with time TextView
-     * @return [View] [R.layout.item_lesson]
-     */
-    private fun createLessonItem(lesson: Lesson, parent: ViewGroup, hasBlur: Boolean, number: Int, hasTime: Boolean) =
-        LayoutInflater.from(context).inflate(R.layout.item_lesson, parent, false).apply {
-            if (!hasTime) {
-                itemLessonTimeDivider.visibility = View.GONE
-            } else {
-                itemLessonTimeDivider.visibility = View.VISIBLE
-                val time = resources.getStringArray(
-                    if (lesson.group.isEvening) R.array.time_evening else R.array.time_morning
-                )[number]
-                itemLessonTime.text = time
-            }
-            val classroomsString = SpannableStringBuilder().apply {
-                lesson.classrooms.forEach { classroom ->
-                    append(classroom.name).append(" ")
-                    val colorSpan = try {
-                        ForegroundColorSpan(Color.parseColor(classroom.color))
-                    } catch (e: IllegalArgumentException) {
-                        ForegroundColorSpan(Color.BLACK)
+    companion object {
+        /**
+         * Inflates and fills lesson item view [R.layout.item_lesson]
+         * @param lesson is [Lesson] object
+         * @param parent is [ViewGroup] that should contain this view
+         * @param hasBlur turns on semitransparent foreground view
+         * @param hasTime turns on top line with time TextView
+         * @return [View] [R.layout.item_lesson]
+         */
+        public fun createLessonItem(
+            context: Context, lesson: Lesson, scheduleType: ScheduleType, parent: ViewGroup?,
+            hasBlur: Boolean, number: Int, hasTime: Boolean
+        ) =
+            LayoutInflater.from(context).inflate(R.layout.item_lesson, parent, false).apply {
+                if (!hasTime) {
+                    itemLessonTimeDivider.visibility = View.GONE
+                } else {
+                    itemLessonTimeDivider.visibility = View.VISIBLE
+                    val time = context.resources.getStringArray(
+                        if (lesson.group.isEvening) R.array.time_evening else R.array.time_morning
+                    )[lesson.number]
+                    itemLessonTime.text = time
+                }
+                if (scheduleType != ScheduleType.Group) {
+                    itemLessonGroupDivider.visibility = View.VISIBLE
+                    itemLessonGroup.text = lesson.group.name
+                } else {
+                    itemLessonGroupDivider.visibility = View.GONE
+                }
+                val classroomsString = SpannableStringBuilder().apply {
+                    lesson.classrooms.forEach { classroom ->
+                        append(classroom.name).append(" ")
+                        val colorSpan = try {
+                            ForegroundColorSpan(Color.parseColor(classroom.color))
+                        } catch (e: IllegalArgumentException) {
+                            ForegroundColorSpan(Color.BLACK)
+                        }
+                        setSpan(
+                            colorSpan, length - classroom.name.length - 1,
+                            length, SPAN_INCLUSIVE_INCLUSIVE
+                        )
                     }
-                    setSpan(colorSpan, length - classroom.name.length - 1, length, SPAN_INCLUSIVE_INCLUSIVE)
                 }
-            }
-            if (classroomsString.isEmpty()) itemLessonClassrooms.visibility = View.GONE
-            else itemLessonClassrooms.apply {
-                text = classroomsString
-                movementMethod = LinkMovementMethod.getInstance()
-            }
-
-            itemLessonTitle.text = lesson.name
-
-            StringBuilder().apply {
-                lesson.teachers.forEachIndexed { index, teacher ->
-                    append("${teacher.name} ${if (index < lesson.teachers.size - 1) "\n" else ""}")
+                if (classroomsString.isEmpty()) itemLessonClassrooms.visibility = View.GONE
+                else itemLessonClassrooms.apply {
+                    text = classroomsString
+                    movementMethod = LinkMovementMethod.getInstance()
                 }
-                if (isEmpty()) itemLessonTeachers.visibility = View.GONE
-                else itemLessonTeachers.text = toString()
-            }
 
-            val dateFrom = DateFormatUtils.simplifyDate(lesson.dateFrom)
-            val dateTo = DateFormatUtils.simplifyDate(lesson.dateTo)
-            itemLessonDates.text = if (dateFrom == dateTo) dateFrom else "$dateFrom - $dateTo"
-            if (hasBlur) itemScheduleDayBlur.visibility = View.VISIBLE
-        }
+                itemLessonTitle.text = lesson.name
+
+                StringBuilder().apply {
+                    lesson.teachers.forEachIndexed { index, teacher ->
+                        append("${teacher.name} ${if (index < lesson.teachers.size - 1) "\n" else ""}")
+                    }
+                    if (isEmpty()) itemLessonTeachers.visibility = View.GONE
+                    else itemLessonTeachers.text = toString()
+                }
+
+                val dateFrom = DateFormatUtils.simplifyDate(lesson.dateFrom)
+                val dateTo = DateFormatUtils.simplifyDate(lesson.dateTo)
+                itemLessonDates.text = if (dateFrom == dateTo) dateFrom else "$dateFrom - $dateTo"
+                if (hasBlur) itemScheduleDayBlur.visibility = View.VISIBLE
+            }
+    }
+
+    override fun onItemClick(query: String) {
+        schedulePresenter.loadSchedule(query)
+    }
 }

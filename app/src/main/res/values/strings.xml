@@ -11,7 +11,7 @@
 
 <!--  Preferences  -->
     <string name="enable_notifications">Enable notifications</string>
-    <string name="notifications_key">Notifications key</string>
+    <string name="notifications_target">Notifications target</string>
     <string name="group_or_teacher_to_notify_schedule_changes">Group or teacher name to notify schedule changes</string>
     <string name="enter_a_group_or_teacher_name">Enter a group or teacher name</string>
     <string name="build_version">Build version</string>
@@ -47,6 +47,9 @@
     <string name="no_internet_connection">No internet connection</string>
     <string name="loading_error">Loading error</string>
     <string name="permission_notification">Some required permissions not granted</string>
+    <string name="search_by">Search by</string>
+    <string name="please_fill_this_field">Please fill this field</string>
+    <string name="no_lesson">No lesson</string>
 
     <string-array name="days_of_week">
         <item>Monday</item>

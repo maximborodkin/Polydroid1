@@ -21,6 +21,7 @@ class ContactsFragment : MvpAppCompatFragment(), ContactsView {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        activity?.title = getString(R.string.contacts)
         contactsRefreshLayout.setOnRefreshListener {
             contactsPresenter.loadContacts()
         }

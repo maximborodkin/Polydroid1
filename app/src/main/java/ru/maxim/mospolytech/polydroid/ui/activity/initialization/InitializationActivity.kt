@@ -18,11 +18,13 @@ class InitializationActivity : AppCompatActivity() {
         initializationOk.setOnClickListener {
             val text = initializationKey.text.toString()
             if (text.isEmpty()){
-                initializationKeyLayout.error = "Error"
+                initializationKeyLayout.error = getString(R.string.please_fill_this_field)
             }
             else{
-                preferencesEditor.putString("notifications_key", initializationKey.text.toString()).apply()
+                preferencesEditor.putString("notifications_target",
+                    initializationKey.text.toString()).apply()
                 preferencesEditor.putBoolean("is_initialized", true).apply()
+                finish()
             }
         }
         initializationSkip.setOnClickListener {

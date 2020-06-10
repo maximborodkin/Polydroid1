@@ -42,11 +42,36 @@
             app:layout_constraintTop_toTopOf="parent"
             android:background="@color/grey"/>
     </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/itemLessonGroupDivider"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/itemLessonTimeDivider"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <TextView
+            android:id="@+id/itemLessonGroup"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            tools:text="171-371"/>
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="wrap_content"
+            android:background="@color/grey"
+            android:layout_margin="4dp"/>
+
+    </LinearLayout>
+
     <TextView
         android:id="@+id/itemLessonClassrooms"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintStart_toEndOf="@id/itemLessonGroupDivider"
         app:layout_constraintTop_toBottomOf="@id/itemLessonTimeDivider"
         android:textSize="18sp"
         tools:text="Н515"
@@ -60,7 +85,7 @@
         android:textStyle="bold"
         android:layout_marginEnd="12dp"
         app:layout_constraintEnd_toStartOf="@+id/itemLessonType"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintStart_toEndOf="@id/itemLessonGroupDivider"
         app:layout_constraintTop_toBottomOf="@id/itemLessonClassrooms"
         tools:text="Lesson title" />
 
@@ -68,7 +93,7 @@
         android:id="@+id/itemLessonTeachers"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintStart_toEndOf="@id/itemLessonGroupDivider"
         app:layout_constraintTop_toBottomOf="@id/itemLessonTitle"
         android:textStyle="italic"
         android:textColor="@color/black"
@@ -78,7 +103,7 @@
         android:id="@+id/itemLessonDates"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintStart_toEndOf="@id/itemLessonGroupDivider"
         app:layout_constraintTop_toBottomOf="@id/itemLessonTeachers"
         tools:text="10 Feb - 12 Apr"/>
 

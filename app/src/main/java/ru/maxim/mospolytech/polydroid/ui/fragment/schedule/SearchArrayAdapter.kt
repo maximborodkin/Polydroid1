@@ -14,7 +14,7 @@ import ru.maxim.mospolytech.polydroid.model.SearchObject
 
 class SearchArrayAdapter(context: Context, items: List<SearchObject>) : ArrayAdapter<SearchObject>(context, 0, ArrayList()) {
 
-    private val searchItemsFull: ArrayList<SearchObject> = ArrayList(items)
+    private val searchItemsFull: ArrayList<SearchObject> = ArrayList(items) // copy of original list
 
     private val searchFilter = object : Filter() {
         override fun performFiltering(constraint: CharSequence?): FilterResults {
