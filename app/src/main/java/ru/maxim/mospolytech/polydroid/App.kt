@@ -1,6 +1,6 @@
 package ru.maxim.mospolytech.polydroid
 
-import android.app.Application
+import android.app.*
 import android.os.Build
 import ru.maxim.mospolytech.polydroid.repository.local.CacheManager
 import ru.maxim.mospolytech.polydroid.repository.local.PreferencesManager

@@ -17,8 +17,9 @@ object PreferencesManager {
      */
     private const val isInitializedKey = "is_initialized"
     private const val isEnabledNotificationsKey = "enable_notifications"
-    private const val isDarkThemeKey = "enable_notifications"
-    private const val notificationsTargetKey = "notifications_target"
+    const val notificationsTargetKey = "notifications_target"
+    const val notificationsStyleKey = "target_type"
+    private const val isDarkThemeKey = "dark_theme"
     private const val lastNotificationIdKey = "last_notification_id"
     private const val lastRequestKey = "last_request"
 
@@ -31,13 +32,17 @@ object PreferencesManager {
         get() = sharedPreferences.getBoolean(isEnabledNotificationsKey, false)
         set(value) { sharedPreferences.edit().putBoolean(isEnabledNotificationsKey, value).apply() }
 
-    var isDarkTheme: Boolean
-        get() = sharedPreferences.getBoolean(isDarkThemeKey, false)
-        set(value) { sharedPreferences.edit().putBoolean(isDarkThemeKey, value).apply() }
-
     var notificationsTarget: String?
         get() = sharedPreferences.getString(notificationsTargetKey, null)
         set(value) { sharedPreferences.edit().putString(notificationsTargetKey, value).apply() }
+
+    var notificationsStyle: String
+        get() = sharedPreferences.getString(notificationsStyleKey, null)?:"student"
+        set(value) { sharedPreferences.edit().putString(notificationsTargetKey, value).apply() }
+
+    var isDarkTheme: Boolean
+        get() = sharedPreferences.getBoolean(isDarkThemeKey, false)
+        set(value) { sharedPreferences.edit().putBoolean(isDarkThemeKey, value).apply() }
 
     var lastNotificationId: Int
         get() = sharedPreferences.getInt(lastNotificationIdKey, 0)

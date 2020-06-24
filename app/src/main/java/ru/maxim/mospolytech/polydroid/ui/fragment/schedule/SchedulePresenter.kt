@@ -39,13 +39,11 @@ class SchedulePresenter : MvpPresenter<ScheduleView>(), CoroutineScope by MainSc
         }
         val cachedSchedule = loadFromCache(lastRequest)
         if (cachedSchedule != null) {
-            Log.i("PRSENTER", cachedSchedule.id.toString() + " " + lastRequest)
             viewState.drawSchedule(cachedSchedule)
             if (!isActual(cachedSchedule.date)) {
                 loadFromServer(lastRequest, cachedSchedule.date, false)
             }
         } else {
-            Log.i("PRSENTER", "lr: $lastRequest")
             loadFromServer(lastRequest, null, false)
         }
     }
@@ -75,7 +73,7 @@ class SchedulePresenter : MvpPresenter<ScheduleView>(), CoroutineScope by MainSc
     }
 
     private fun loadSuggestions(){
-        val cachedSearchObjects = CacheManager.getCachedSearchObjects()
+        val cachedSearchObjects = CacheManager.getSearchObjects()
         if (cachedSearchObjects != null) {
             viewState.onSearchObjectsLoaded(cachedSearchObjects.toArrayList())
             if (isActual(cachedSearchObjects.date)) return
@@ -83,6 +81,8 @@ class SchedulePresenter : MvpPresenter<ScheduleView>(), CoroutineScope by MainSc
         launch {
             try {
                 val searchObjects = searchObjectsService.getSearchObjects()
+                searchObjects.date = Date().time
+                CacheManager.saveSearchObjects(searchObjects)
                 viewState.onSearchObjectsLoaded(searchObjects.toArrayList())
             } catch (e: Exception) { }
         }

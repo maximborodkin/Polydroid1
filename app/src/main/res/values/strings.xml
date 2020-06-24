@@ -26,6 +26,8 @@
     <string name="cache_size_bytes">Cache size %1$s Bytes</string>
     <string name="cache_size_kbytes">Cache size %1$s KBytes</string>
     <string name="cache_size_mbytes">Cache size %1$s MBytes</string>
+    <string name="student">Student</string>
+    <string name="teacher">Teacher</string>
 
 <!--  ContactsFragment  -->
     <string name="contacts_load_error">Unable to get contacts</string>
@@ -49,7 +51,11 @@
     <string name="permission_notification">Some required permissions not granted</string>
     <string name="search_by">Search by</string>
     <string name="please_fill_this_field">Please fill this field</string>
+
+<!--  Notifications  -->
     <string name="no_lesson">No lesson</string>
+    <string name="become">become</string>
+    <string name="style_of_drawing_lesson_units">Style of drawing lesson units</string>
 
     <string-array name="days_of_week">
         <item>Monday</item>
@@ -79,5 +85,15 @@
         <item>16:10&#8211;17:40</item>
         <item>18:20&#8211;19:40</item>
         <item>19:50&#8211;21:10</item>
+    </string-array>
+
+    <string-array name="target_type_entries">
+        <item>@string/student</item>
+        <item>@string/teacher</item>
+    </string-array>
+
+    <string-array name="target_type_values">
+        <item>student</item>
+        <item>teacher</item>
     </string-array>
 </resources>

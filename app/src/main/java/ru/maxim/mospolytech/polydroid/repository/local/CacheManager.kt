@@ -19,7 +19,7 @@ object CacheManager {
     private const val searchObjectsFileName = "SearchObjects.json"
     private const val scheduleFileName = "Schedule"
 
-    fun getCachedSearchObjects(): SearchObjects? =
+    fun getSearchObjects(): SearchObjects? =
         getObjectFromCache(searchObjectsFileName)
 
     fun saveSearchObjects(searchObjects: SearchObjects) =

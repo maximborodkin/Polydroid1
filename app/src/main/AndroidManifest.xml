@@ -26,5 +26,7 @@
             android:parentActivityName=".ui.activity.main.MainActivity"/>
         <activity android:name=".ui.activity.notifications.NotificationsActivity"
             android:parentActivityName=".ui.activity.main.MainActivity"/>
+
+        <service android:name=".service.NotificationService" />
     </application>
 </manifest>

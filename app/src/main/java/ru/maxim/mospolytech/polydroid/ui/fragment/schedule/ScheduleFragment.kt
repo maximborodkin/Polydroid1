@@ -10,7 +10,6 @@ import android.text.Spanned.SPAN_INCLUSIVE_INCLUSIVE
 import android.text.method.LinkMovementMethod
 import android.text.style.ForegroundColorSpan
 import android.text.style.ImageSpan
-import android.util.Log
 import android.view.*
 import android.view.inputmethod.EditorInfo
 import android.widget.AdapterView
@@ -18,6 +17,7 @@ import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.widget.SearchView
 import androidx.core.content.ContextCompat
+import androidx.core.text.HtmlCompat
 import com.arellomobile.mvp.MvpAppCompatFragment
 import com.arellomobile.mvp.presenter.InjectPresenter
 import com.google.android.material.snackbar.Snackbar
@@ -71,7 +71,7 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView,
             val message = getString(R.string.schedule_start_message)
             append(message)
             setSpan(
-                ImageSpan(context!!, R.drawable.ic_search_grey_24dp),
+                ImageSpan(requireContext(), R.drawable.ic_search_grey_24dp),
                 message.indexOf("%icon%") + "%icon%".length,
                 message.indexOf("%icon%") + "%icon%".length + 1,
                 Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
@@ -91,7 +91,7 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView,
         inflater.inflate(R.menu.menu_schedule_top, menu)
         val searchMenu = menu.findItem(R.id.scheduleMenuSearch)
         val searchView: SearchView = searchMenu.actionView as SearchView
-        val searchBarAdapter = SearchArrayAdapter(context!!, searchObjects)
+        val searchBarAdapter = SearchArrayAdapter(requireContext(), searchObjects)
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
                 searchView.clearFocus()
@@ -142,8 +142,6 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView,
     }
 
     override fun showStartScreen() {
-        Log.i("SCHEDULE", "showStartScreen")
-
         scheduleRefreshLayout.isRefreshing = false
         scheduleProgressBar.visibility = View.GONE
         scheduleNotificationLayout.visibility = View.GONE
@@ -157,8 +155,6 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView,
     }
 
     override fun showLoadingNotification() {
-        Log.i("SCHEDULE", "showLoadingNotification")
-
         scheduleRefreshLayout.isRefreshing = false
         scheduleNotificationLayout.visibility = View.VISIBLE
         scheduleProgressBar.visibility = View.GONE
@@ -166,8 +162,6 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView,
     }
 
     override fun showNoConnectionNotification() {
-        Log.i("SCHEDULE", "showNoConnectionNotification")
-
         scheduleRefreshLayout.isRefreshing = false
         scheduleProgressBar.visibility = View.GONE
         scheduleNotificationTitle.text = getString(R.string.no_internet_connection)
@@ -175,8 +169,6 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView,
     }
 
     override fun showNetworkErrorNotification() {
-        Log.i("SCHEDULE", "showNetworkErrorNotification")
-
         scheduleRefreshLayout.isRefreshing = false
         scheduleNotificationLayout.visibility = View.VISIBLE
         scheduleProgressBar.visibility = View.GONE
@@ -196,8 +188,6 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView,
     }
 
     override fun showTimeNotification(time: Long) {
-        Log.i("SCHEDULE", "showTimeNotification")
-
         scheduleRefreshLayout.isRefreshing = false
         scheduleProgressBar.visibility = View.GONE
         scheduleNotificationLayout.visibility = View.VISIBLE
@@ -206,14 +196,11 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView,
     }
 
     override fun showLoading() {
-        Log.i("SCHEDULE", "showLoading")
-
         scheduleStartMessage.visibility = View.GONE
         scheduleProgressBar.visibility = View.VISIBLE
     }
 
     override fun drawSchedule(schedule: Schedule) {
-        Log.i("SCHEDULE", "drawSchedule")
         scheduleRefreshLayout.isRefreshing = false
         scheduleProgressBar.visibility = View.GONE
         scheduleNotificationLayout.visibility = View.GONE
@@ -250,7 +237,7 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView,
             if (lessonsDay.isNullOrEmpty()) itemScheduleDayMessage.text = getString(R.string.no_lessons_today)
             val now = Date().time
             //Several lessons grouped by time range
-            lessonsDay.forEachIndexed {index,  lessonPosition ->
+            lessonsDay.forEach {  lessonPosition ->
                 var lessonsCounter = 0
                 // One lesson
                 lessonPosition.forEach {lesson ->
@@ -258,7 +245,7 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView,
                     if (scheduleTabLayout.selectedTabPosition == 1
                         || scheduleTabLayout.selectedTabPosition == 0 && inRange) {
                         val lessonItem = createLessonItem(context, lesson, currentScheduleType,
-                            this, !inRange, index, lessonsCounter==0).apply {
+                            this, !inRange, lessonsCounter==0).apply {
                             setOnClickListener {
                                 val objects = ArrayList<SearchObject>().apply {
                                     addAll(lesson.classrooms)
@@ -286,11 +273,10 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView,
          * @param hasTime turns on top line with time TextView
          * @return [View] [R.layout.item_lesson]
          */
-        public fun createLessonItem(
+        fun createLessonItem(
             context: Context, lesson: Lesson, scheduleType: ScheduleType, parent: ViewGroup?,
-            hasBlur: Boolean, number: Int, hasTime: Boolean
-        ) =
-            LayoutInflater.from(context).inflate(R.layout.item_lesson, parent, false).apply {
+            hasBlur: Boolean, hasTime: Boolean
+        ): View = LayoutInflater.from(context).inflate(R.layout.item_lesson, parent, false).apply {
                 if (!hasTime) {
                     itemLessonTimeDivider.visibility = View.GONE
                 } else {
@@ -306,24 +292,32 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView,
                 } else {
                     itemLessonGroupDivider.visibility = View.GONE
                 }
+
                 val classroomsString = SpannableStringBuilder().apply {
                     lesson.classrooms.forEach { classroom ->
-                        append(classroom.name).append(" ")
-                        val colorSpan = try {
-                            ForegroundColorSpan(Color.parseColor(classroom.color))
-                        } catch (e: IllegalArgumentException) {
-                            ForegroundColorSpan(Color.BLACK)
+                        if (classroom.name.startsWith("<a")
+                            and classroom.name.contains("href")
+                            and classroom.name.contains("</a>")){
+                            append(HtmlCompat.fromHtml(classroom.name, HtmlCompat.FROM_HTML_MODE_LEGACY))
+                        }else {
+                            append(classroom.name).append(" ")
+                            val colorSpan = try {
+                                ForegroundColorSpan(Color.parseColor(classroom.color))
+                            } catch (e: IllegalArgumentException) {
+                                ForegroundColorSpan(Color.BLACK)
+                            }
+                            setSpan(
+                                colorSpan, length - classroom.name.length - 1,
+                                length, SPAN_INCLUSIVE_INCLUSIVE
+                            )
                         }
-                        setSpan(
-                            colorSpan, length - classroom.name.length - 1,
-                            length, SPAN_INCLUSIVE_INCLUSIVE
-                        )
                     }
                 }
                 if (classroomsString.isEmpty()) itemLessonClassrooms.visibility = View.GONE
-                else itemLessonClassrooms.apply {
-                    text = classroomsString
+
+                itemLessonClassrooms.apply {
                     movementMethod = LinkMovementMethod.getInstance()
+                    text = classroomsString
                 }
 
                 itemLessonTitle.text = lesson.name

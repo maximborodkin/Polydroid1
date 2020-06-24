@@ -11,12 +11,19 @@ import kotlinx.android.synthetic.main.item_notification.view.*
 import ru.maxim.mospolytech.polydroid.R
 import ru.maxim.mospolytech.polydroid.model.Notification
 import ru.maxim.mospolytech.polydroid.model.ScheduleType
+import ru.maxim.mospolytech.polydroid.repository.local.PreferencesManager
 import ru.maxim.mospolytech.polydroid.ui.activity.notifications.NotificationsRecyclerAdapter.NotificationViewHolder
 import ru.maxim.mospolytech.polydroid.ui.fragment.schedule.ScheduleFragment
 import ru.maxim.mospolytech.polydroid.util.DateFormatUtils
 
 class NotificationsRecyclerAdapter(val notifications: List<Notification>)
     : RecyclerView.Adapter<NotificationViewHolder>() {
+
+    val notificationsStyle =
+        if (PreferencesManager.notificationsStyle == "teacher")
+            ScheduleType.Teacher
+        else
+            ScheduleType.Group
 
     class NotificationViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val dateView: TextView = view.itemNotificationDate
@@ -39,9 +46,7 @@ class NotificationsRecyclerAdapter(val notifications: List<Notification>)
         if (oldLesson != null) {
             holder.oldLessonView.addView(
                 ScheduleFragment.createLessonItem(
-                    context, oldLesson, ScheduleType.Group,
-                    null, false, 0, true)
-            )
+                    context, oldLesson, ScheduleType.Group, null, hasBlur = false, hasTime = true))
         } else {
             holder.oldLessonView.addView(TextView(context).apply {
                     text = context.getString(R.string.no_lesson)
@@ -55,9 +60,7 @@ class NotificationsRecyclerAdapter(val notifications: List<Notification>)
         if (newLesson != null){
             holder.newLessonView.addView(
                 ScheduleFragment.createLessonItem(
-                    context, newLesson, ScheduleType.Group,
-                    null, false, 0, true)
-            )
+                    context, newLesson, notificationsStyle, null, hasBlur = false, hasTime = true))
         } else {
             holder.newLessonView.addView(TextView(context).apply {
                 text = context.getString(R.string.no_lesson)

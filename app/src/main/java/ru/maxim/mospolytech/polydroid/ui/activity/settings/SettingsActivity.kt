@@ -3,10 +3,12 @@ package ru.maxim.mospolytech.polydroid.ui.activity.settings
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.EditTextPreference
+import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import ru.maxim.mospolytech.polydroid.R
 import ru.maxim.mospolytech.polydroid.repository.local.CacheManager
+import ru.maxim.mospolytech.polydroid.repository.local.PreferencesManager
 import java.io.File
 
 class SettingsActivity : AppCompatActivity(){
@@ -29,7 +31,15 @@ class SettingsActivity : AppCompatActivity(){
                 else
                     preference.text
             }
-            findPreference<EditTextPreference>("notifications_key")?.summaryProvider = notificationsKeySummaryProvider
+            findPreference<EditTextPreference>(PreferencesManager.notificationsTargetKey)?.summaryProvider = notificationsKeySummaryProvider
+
+            val notificationsStyleSummaryProvider = Preference.SummaryProvider<ListPreference> { preference ->
+                if (preference.value.isNullOrEmpty())
+                    getString(R.string.style_of_drawing_lesson_units)
+                else
+                    preference.value
+            }
+            findPreference<ListPreference>(PreferencesManager.notificationsStyleKey)?.summaryProvider = notificationsStyleSummaryProvider
 
             val invalidateCacheSummaryProvider = Preference.SummaryProvider<Preference> {
                 val cacheSize = CacheManager.getCacheSize()
