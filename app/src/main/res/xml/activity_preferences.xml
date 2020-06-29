@@ -4,6 +4,11 @@
     <PreferenceCategory
         app:title="@string/application"
         app:iconSpaceReserved="false">
+        <SwitchPreferenceCompat
+            app:key="is_session"
+            app:title="Use session schedule"
+            app:iconSpaceReserved="false"
+            app:defaultValue="false"/>
         <Preference
             app:key="invalidate_cache"
             app:title="@string/invalidate_cache"

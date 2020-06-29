@@ -5,6 +5,7 @@ import com.arellomobile.mvp.MvpPresenter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
+import ru.maxim.mospolytech.polydroid.model.Notification
 import ru.maxim.mospolytech.polydroid.repository.local.PreferencesManager
 import ru.maxim.mospolytech.polydroid.repository.remote.service.NotificationService
 
@@ -26,7 +27,7 @@ class NotificationsPresenter : MvpPresenter<NotificationsView>(), CoroutineScope
             try {
                 val notifications = notificationService.getNotifications(lastIndex, target)
                 viewState.onNotificationsLoaded(notifications)
-//                PreferencesManager.lastNotificationId = notifications.last().id
+                PreferencesManager.lastNotificationId = notifications.last().id
             } catch (e: Exception) {
                 viewState.onNotificationsLoadError()
             }

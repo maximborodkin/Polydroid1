@@ -11,7 +11,7 @@ object DateFormatUtils : DateUtils() {
     fun simplifyDate(date: Long) =
         SimpleDateFormat("dd MMM", currentLocale).format(Date(date)).replace(".", "")
 
-    fun getCurrentDay() = SimpleDateFormat("dd", currentLocale).format(Date())
+    fun getCurrentDay(): String = SimpleDateFormat("dd", currentLocale).format(Date())
 
-    fun getCurrentMonth() = SimpleDateFormat("MMM", currentLocale).format(Date())
+    fun getCurrentMonth(): String = SimpleDateFormat("MMM", currentLocale).format(Date())
 }

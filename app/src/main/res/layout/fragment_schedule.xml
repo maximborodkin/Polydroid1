@@ -63,7 +63,7 @@
             app:layout_constraintTop_toTopOf="parent" />
         
         <androidx.appcompat.widget.AppCompatTextView
-            android:id="@+id/scheduleStartMessage"
+            android:id="@+id/scheduleMessageHolder"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:layout_constraintStart_toStartOf="parent"
@@ -74,7 +74,7 @@
             android:paddingEnd="32dp"
             android:textAlignment="center"
             android:textSize="16sp"
-            tools:text="Click 'icon' for search group, teacher or classroom schedule" />
+            tools:text="Some message when schedule is unavailable" />
 
         <androidx.core.widget.NestedScrollView
             android:id="@+id/scheduleScrollView"
@@ -90,7 +90,7 @@
                 android:id="@+id/scheduleListHost"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="#CCCCCC"
+                android:background="#DFDFDF"
                 android:orientation="vertical"/>
         </androidx.core.widget.NestedScrollView>
 

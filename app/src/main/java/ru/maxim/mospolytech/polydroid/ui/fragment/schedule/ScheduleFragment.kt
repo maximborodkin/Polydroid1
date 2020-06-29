@@ -25,11 +25,13 @@ import com.google.android.material.tabs.TabLayout
 import kotlinx.android.synthetic.main.fragment_schedule.*
 import kotlinx.android.synthetic.main.item_lesson.view.*
 import kotlinx.android.synthetic.main.item_schedule_day.view.*
+import kotlinx.android.synthetic.main.item_week_header.view.*
 import ru.maxim.mospolytech.polydroid.R
 import ru.maxim.mospolytech.polydroid.model.Lesson
 import ru.maxim.mospolytech.polydroid.model.Schedule
 import ru.maxim.mospolytech.polydroid.model.ScheduleType
 import ru.maxim.mospolytech.polydroid.model.SearchObject
+import ru.maxim.mospolytech.polydroid.repository.local.PreferencesManager
 import ru.maxim.mospolytech.polydroid.ui.activity.notifications.NotificationsActivity
 import ru.maxim.mospolytech.polydroid.ui.activity.settings.SettingsActivity
 import ru.maxim.mospolytech.polydroid.util.DateFormatUtils
@@ -50,6 +52,11 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView,
         setHasOptionsMenu(true)
     }
 
+    override fun onResume() {
+        super.onResume()
+        schedulePresenter.loadSchedule(null)
+    }
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View =
         inflater.inflate(R.layout.fragment_schedule, container, false)
@@ -67,13 +74,13 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView,
             override fun onTabUnselected(tab: TabLayout.Tab?) {}
         })
 
-        scheduleStartMessage.text = SpannableStringBuilder().apply {
+        scheduleMessageHolder.text = SpannableStringBuilder().apply {
             val message = getString(R.string.schedule_start_message)
-            append(message)
+            append(message.replace("\$icon\$", ""))
             setSpan(
                 ImageSpan(requireContext(), R.drawable.ic_search_grey_24dp),
-                message.indexOf("%icon%") + "%icon%".length,
-                message.indexOf("%icon%") + "%icon%".length + 1,
+                message.indexOf("\$icon\$"),
+                message.indexOf("\$icon\$") + 1,
                 Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
             )
         }
@@ -100,12 +107,13 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView,
                 else {
                     val suitableObjects = searchObjects.filter { it.hasEntry(query) }
                     if (suitableObjects.isEmpty()) {
-                        schedulePresenter.loadSchedule("schedule/search?q=$query")
+                        schedulePresenter.loadSchedule("schedule/search?q=$query&" +
+                                "${PreferencesManager.isSessionKey}=${PreferencesManager.isSession}")
                     }
                     if (suitableObjects.size == 1) {
                         val searchObject = suitableObjects.first()
-                        schedulePresenter
-                            .loadSchedule("schedule/${searchObject.getType()}/${searchObject.id}")
+                        schedulePresenter.loadSchedule("schedule/${searchObject.getType()}/${searchObject.id}?" +
+                                "${PreferencesManager.isSessionKey}=${PreferencesManager.isSession}")
                     }
                     true
                 }
@@ -122,7 +130,8 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView,
             onItemClickListener = AdapterView.OnItemClickListener { adapterView, _, itemIndex, _ ->
                 val searchItem = adapterView.getItemAtPosition(itemIndex) as SearchObject
                 setText(searchItem.name)
-                schedulePresenter.loadSchedule("schedule/${searchItem.getType()}/${searchItem.id}")
+                schedulePresenter.loadSchedule("schedule/${searchItem.getType()}/${searchItem.id}?" +
+                        "${PreferencesManager.isSessionKey}=${PreferencesManager.isSession}")
             }
         }
     }
@@ -145,7 +154,7 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView,
         scheduleRefreshLayout.isRefreshing = false
         scheduleProgressBar.visibility = View.GONE
         scheduleNotificationLayout.visibility = View.GONE
-        scheduleStartMessage.visibility = View.VISIBLE
+        scheduleMessageHolder.visibility = View.VISIBLE
     }
 
     override fun onSearchObjectsLoaded(searchObjectsList: List<SearchObject>) {
@@ -196,16 +205,88 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView,
     }
 
     override fun showLoading() {
-        scheduleStartMessage.visibility = View.GONE
+        scheduleMessageHolder.visibility = View.GONE
         scheduleProgressBar.visibility = View.VISIBLE
     }
 
-    override fun drawSchedule(schedule: Schedule) {
+    private fun getLessonsCount(schedule: Schedule, forCurrentWeek: Boolean): Int {
+        var lessonsCount = 0
+        if (forCurrentWeek) {
+            val now = Date().time
+            schedule.grid.map { day -> day.map { pos -> pos.map { lesson ->
+                if (if (PreferencesManager.isSession) true else lesson.dateFrom <= now
+                            && lesson.dateTo + 1000 * 60 * 60 * 24 >= now) lessonsCount++ } } }
+        } else
+            schedule.grid.map { day -> day.map { pos -> pos.map { lessonsCount += pos.size } } }
+        return lessonsCount
+    }
+
+    override fun drawSchedule(schedule: Schedule, isSession: Boolean) {
+        scheduleListHost.removeAllViews()
+        if (isSession) {
+            schedule.grid.map { day -> day.mapIndexed { index, pos -> pos.map { lesson -> lesson.dayOfWeek = index } } }
+            val flatLessonsList = schedule.grid.flatMap { day -> day.flatten() }.sortedBy { lesson -> lesson.dateFrom }
+
+            val firstSessionDate = Calendar.getInstance().apply { time = Date(flatLessonsList.first().dateFrom) }
+            val lastSessionDate = Calendar.getInstance().apply { time = Date(flatLessonsList.last().dateFrom) }
+            val sessionWeeksCount = lastSessionDate.get(Calendar.WEEK_OF_YEAR) - firstSessionDate.get(Calendar.WEEK_OF_YEAR) + 1
+
+            var lastAddedLessonTime = firstSessionDate.timeInMillis
+            for (week in 0 until sessionWeeksCount){
+                val startWeekTime = lastAddedLessonTime
+                val endWeekTime = (lastAddedLessonTime + 7 * 24 * 60 * 60 *1000) -1
+
+                val weekSchedule = Schedule(
+                    schedule.id,
+                    schedule.type,
+                    schedule.date,
+                    schedule.title,
+                    schedule.grid.map { day -> day.map { pos -> pos.filter { lesson ->
+                        lesson.dateFrom in startWeekTime..endWeekTime
+                    } } }
+                )
+                lastAddedLessonTime = endWeekTime
+                val now = Date().time
+                if (scheduleTabLayout.selectedTabPosition == 1 ||
+                    (scheduleTabLayout.selectedTabPosition == 0 && now < endWeekTime && getLessonsCount(weekSchedule, false)> 0)) {
+                    val weekHeaderView = LayoutInflater.from(context).inflate(R.layout.item_week_header, scheduleListHost, false)
+                    val weekDateFrom = DateFormatUtils.simplifyDate(startWeekTime)
+                    val weekDateTo = DateFormatUtils.simplifyDate(endWeekTime - 24 * 60 * 60 * 1000)
+                    weekHeaderView.itemWeekHeaderTitle.text = getString(R.string.range_placeholder, weekDateFrom, weekDateTo)
+                    scheduleListHost.addView(weekHeaderView)
+                    drawSemesterSchedule(weekSchedule)
+                }
+            }
+        } else
+            drawSemesterSchedule(schedule)
+    }
+
+    private fun drawSemesterSchedule(schedule: Schedule) {
         scheduleRefreshLayout.isRefreshing = false
         scheduleProgressBar.visibility = View.GONE
         scheduleNotificationLayout.visibility = View.GONE
-        scheduleListHost.removeAllViews()
         activity?.title = schedule.title
+        if (getLessonsCount(schedule, false) == 0){
+            scheduleMessageHolder.text = SpannableStringBuilder().apply {
+                val message: String = if (PreferencesManager.isSession) {
+                    getString(R.string.schedule_empty_result_session, "${schedule.type} ${schedule.title}")
+                } else {
+                    getString(R.string.schedule_empty_result_semester, "${schedule.type} ${schedule.title}")
+                }
+                append(message.replace("\$icon\$", ""))
+                setSpan(
+                    ImageSpan(requireContext(), R.drawable.ic_settings_grey_24dp),
+                    message.indexOf("\$icon\$"),
+                    message.indexOf("\$icon\$") + 1,
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
+            }
+            return
+        }
+        if (scheduleTabLayout.selectedTabPosition == 0 && getLessonsCount(schedule, true) == 0){
+            scheduleMessageHolder.setText(R.string.no_lessons_on_this_week)
+            return
+        }
         currentScheduleType = when(schedule.type) {
             "teacher" -> ScheduleType.Teacher
             "classroom" -> ScheduleType.Classroom
@@ -241,7 +322,10 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView,
                 var lessonsCounter = 0
                 // One lesson
                 lessonPosition.forEach {lesson ->
-                    val inRange = lesson.dateFrom < now && lesson.dateTo+1000*60*60*24 > now
+                    val inRange = if (PreferencesManager.isSession)
+                        lesson.dateFrom >= now
+                    else
+                        lesson.dateFrom < now && lesson.dateTo+1000*60*60*24 > now
                     if (scheduleTabLayout.selectedTabPosition == 1
                         || scheduleTabLayout.selectedTabPosition == 0 && inRange) {
                         val lessonItem = createLessonItem(context, lesson, currentScheduleType,
@@ -283,7 +367,7 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView,
                     itemLessonTimeDivider.visibility = View.VISIBLE
                     val time = context.resources.getStringArray(
                         if (lesson.group.isEvening) R.array.time_evening else R.array.time_morning
-                    )[lesson.number]
+                    )[lesson.number-1]
                     itemLessonTime.text = time
                 }
                 if (scheduleType != ScheduleType.Group) {
@@ -296,8 +380,7 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView,
                 val classroomsString = SpannableStringBuilder().apply {
                     lesson.classrooms.forEach { classroom ->
                         if (classroom.name.startsWith("<a")
-                            and classroom.name.contains("href")
-                            and classroom.name.contains("</a>")){
+                            && classroom.name.contains("</a>")){
                             append(HtmlCompat.fromHtml(classroom.name, HtmlCompat.FROM_HTML_MODE_LEGACY))
                         }else {
                             append(classroom.name).append(" ")

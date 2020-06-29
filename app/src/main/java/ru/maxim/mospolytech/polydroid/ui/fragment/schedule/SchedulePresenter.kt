@@ -1,6 +1,5 @@
 package ru.maxim.mospolytech.polydroid.ui.fragment.schedule
 
-import android.util.Log
 import com.arellomobile.mvp.InjectViewState
 import com.arellomobile.mvp.MvpPresenter
 import kotlinx.coroutines.CoroutineScope
@@ -9,6 +8,7 @@ import kotlinx.coroutines.launch
 import ru.maxim.mospolytech.polydroid.model.Schedule
 import ru.maxim.mospolytech.polydroid.repository.local.CacheManager
 import ru.maxim.mospolytech.polydroid.repository.local.PreferencesManager
+import ru.maxim.mospolytech.polydroid.repository.local.PreferencesManager.lastRequest
 import ru.maxim.mospolytech.polydroid.repository.remote.RetrofitClient
 import ru.maxim.mospolytech.polydroid.repository.remote.service.ScheduleService
 import ru.maxim.mospolytech.polydroid.repository.remote.service.SearchObjectsService
@@ -24,22 +24,23 @@ class SchedulePresenter : MvpPresenter<ScheduleView>(), CoroutineScope by MainSc
     override fun onFirstViewAttach() {
         super.onFirstViewAttach()
         loadSuggestions()
-        initView()
     }
 
     /**
      * View initializing method
      * Calls only on first view attach
      */
+    @Deprecated(message = "Redundant method. Use loadSchedule(null) instead")
     private fun initView() {
-        val lastRequest = PreferencesManager.lastRequest
-        if (lastRequest.isNullOrEmpty()) {
+        val lastRequest = lastRequest
+        if (lastRequest.isEmpty()) {
             viewState.showStartScreen()
             return
         }
         val cachedSchedule = loadFromCache(lastRequest)
         if (cachedSchedule != null) {
-            viewState.drawSchedule(cachedSchedule)
+            val isSession = lastRequest.contains("is_session=true")
+            viewState.drawSchedule(cachedSchedule, isSession)
             if (!isActual(cachedSchedule.date)) {
                 loadFromServer(lastRequest, cachedSchedule.date, false)
             }
@@ -54,15 +55,30 @@ class SchedulePresenter : MvpPresenter<ScheduleView>(), CoroutineScope by MainSc
      */
     fun loadSchedule(query: String?) {
         if (query == null) { // update
-            val lastRequest = PreferencesManager.lastRequest
-            if (lastRequest.isNullOrEmpty())
+            var lastRequest = lastRequest
+            val isSession = PreferencesManager.isSession
+            if (isSession && lastRequest.contains("is_session=false"))
+                lastRequest = lastRequest.replace("=false", "=true")
+            else if (!isSession && lastRequest.contains("is_session=true"))
+                lastRequest = lastRequest.replace("=true", "=false")
+
+            if (lastRequest.isEmpty())
                 viewState.showStartScreen()
-            else
-                loadFromServer(lastRequest, null, true)
+            else {
+                val cachedSchedule = loadFromCache(lastRequest)
+                if (cachedSchedule != null) {
+                    viewState.drawSchedule(cachedSchedule, lastRequest.contains("is_session=true"))
+                    if (!isActual(cachedSchedule.date)) {
+                        loadFromServer(lastRequest, cachedSchedule.date, false)
+                    }
+                } else {
+                    loadFromServer(lastRequest, null, true)
+                }
+            }
         } else { // search
             val cachedSchedule = loadFromCache(query)
             if (cachedSchedule != null) {
-                viewState.drawSchedule(cachedSchedule)
+                viewState.drawSchedule(cachedSchedule, query.contains("is_session=false"))
                 if (!isActual(cachedSchedule.date)) {
                     loadFromServer(query, cachedSchedule.date, false)
                 }
@@ -90,11 +106,12 @@ class SchedulePresenter : MvpPresenter<ScheduleView>(), CoroutineScope by MainSc
 
     private fun loadFromCache(query: String): Schedule? {
         val cachedSchedule = CacheManager.getSchedule(query)
-        if (cachedSchedule != null) PreferencesManager.lastRequest = query
+        lastRequest = query
         return cachedSchedule
     }
 
     private fun loadFromServer(query: String, cachedScheduleTime: Long?, isUpdate: Boolean) {
+        lastRequest = query
         val hasANSPermission = PermissionManager.hasANSPermission()
         val hasInternetPermission = PermissionManager.hasInternetPermission()
         val isOnline = if (hasANSPermission) RetrofitClient.isOnline() else true
@@ -113,10 +130,11 @@ class SchedulePresenter : MvpPresenter<ScheduleView>(), CoroutineScope by MainSc
             launch {
                 try {
                     val schedule = scheduleService.getSchedule(query)
-                    viewState.drawSchedule(schedule)
-                    PreferencesManager.lastRequest = query
+                    viewState.drawSchedule(schedule, query.contains("is_session=true"))
+                    lastRequest = query
                     CacheManager.saveSchedule(schedule, query)
                 } catch (e: Exception) {
+                    print(e)
                     if (cachedScheduleTime == null)
                         viewState.showNoConnectionNotification()
                     else

@@ -44,8 +44,11 @@
     <string name="saturday">Saturday</string>
     <string name="application">Application</string>
     <string name="cached_schedule">"Cached schedule from %1$s"</string>
+    <string name="range_placeholder">"%1$s - %2$s"</string>
     <string name="loading_schedule">Loading schedule&#8230;</string>
-    <string name="schedule_start_message">Click  for search group, teacher or classroom schedule</string>
+    <string name="schedule_start_message">Click$icon$ for search group, teacher or classroom schedule</string>
+    <string name="schedule_empty_result_semester">No schedule found for %s.\nYou may try to find session schedule.\nClick$icon$ and set \"Use session schedule\" to True</string>
+    <string name="schedule_empty_result_session">No schedule found for %s.\nYou may try to find semester schedule.\nClick$icon$ and set \"Use session schedule\" to False</string>
     <string name="no_internet_connection">No internet connection</string>
     <string name="loading_error">Loading error</string>
     <string name="permission_notification">Some required permissions not granted</string>
@@ -53,9 +56,13 @@
     <string name="please_fill_this_field">Please fill this field</string>
 
 <!--  Notifications  -->
+    <string name="default_notification_channel_name">Schedule changes notifications</string>
+    <string name="default_notification_channel_description">Notify you about changes in schedule</string>
+
     <string name="no_lesson">No lesson</string>
     <string name="become">become</string>
     <string name="style_of_drawing_lesson_units">Style of drawing lesson units</string>
+    <string name="no_lessons_on_this_week">No lessons on current week.\nYou may open full schedule</string>
 
     <string-array name="days_of_week">
         <item>Monday</item>

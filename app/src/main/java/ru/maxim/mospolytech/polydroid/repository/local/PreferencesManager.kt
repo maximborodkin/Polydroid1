@@ -16,6 +16,7 @@ object PreferencesManager {
      * SharedPreferences keys
      */
     private const val isInitializedKey = "is_initialized"
+    const val isSessionKey = "is_session"
     private const val isEnabledNotificationsKey = "enable_notifications"
     const val notificationsTargetKey = "notifications_target"
     const val notificationsStyleKey = "target_type"
@@ -27,6 +28,10 @@ object PreferencesManager {
     var isInitialized: Boolean
         get() = sharedPreferences.getBoolean(isInitializedKey, false)
         set(value) { sharedPreferences.edit().putBoolean(isInitializedKey, value).apply() }
+
+    var isSession: Boolean
+        get() = sharedPreferences.getBoolean(isSessionKey, false)
+        set(value) { sharedPreferences.edit().putBoolean(isSessionKey, value).apply() }
 
     var isNotificationsEnabled: Boolean
         get() = sharedPreferences.getBoolean(isEnabledNotificationsKey, false)
@@ -48,7 +53,7 @@ object PreferencesManager {
         get() = sharedPreferences.getInt(lastNotificationIdKey, 0)
         set(value) { sharedPreferences.edit().putInt(lastNotificationIdKey, value).apply() }
 
-    var lastRequest: String?
-        get() = sharedPreferences.getString(lastRequestKey, null)
+    var lastRequest: String
+        get() = sharedPreferences.getString(lastRequestKey, "")?:""
         set(value) { sharedPreferences.edit().putString(lastRequestKey, value).apply() }
 }

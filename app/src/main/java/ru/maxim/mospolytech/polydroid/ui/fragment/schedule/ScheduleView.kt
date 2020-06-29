@@ -8,7 +8,7 @@ interface ScheduleView : MvpView {
 
     fun showStartScreen()
     fun onSearchObjectsLoaded(searchObjectsList: List<SearchObject>)
-    fun drawSchedule(schedule: Schedule)
+    fun drawSchedule(schedule: Schedule, isSession: Boolean)
     fun showLoadingNotification()
     fun showNoConnectionNotification()
     fun showNetworkErrorNotification()

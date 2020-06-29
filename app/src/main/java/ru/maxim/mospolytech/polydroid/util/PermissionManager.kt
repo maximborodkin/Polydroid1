@@ -20,4 +20,7 @@ object PermissionManager {
     fun hasInternetPermission() =
         ContextCompat.checkSelfPermission(context, Manifest.permission.INTERNET) == PackageManager.PERMISSION_GRANTED
 
+    fun hasRBCPermission() =
+        ContextCompat.checkSelfPermission(context, Manifest.permission.RECEIVE_BOOT_COMPLETED) == PackageManager.PERMISSION_GRANTED
+
 }
