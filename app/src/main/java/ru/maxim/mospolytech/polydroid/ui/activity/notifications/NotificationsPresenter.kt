@@ -27,7 +27,7 @@ class NotificationsPresenter : MvpPresenter<NotificationsView>(), CoroutineScope
             try {
                 val notifications = notificationService.getNotifications(lastIndex, target)
                 viewState.onNotificationsLoaded(notifications)
-                PreferencesManager.lastNotificationId = notifications.last().id
+                //PreferencesManager.lastNotificationId = notifications.last().id
             } catch (e: Exception) {
                 viewState.onNotificationsLoadError()
             }

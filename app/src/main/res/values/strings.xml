@@ -47,7 +47,6 @@
     <string name="range_placeholder">"%1$s - %2$s"</string>
     <string name="loading_schedule">Loading schedule&#8230;</string>
     <string name="schedule_start_message">Click$icon$ for search group, teacher or classroom schedule</string>
-    <string name="schedule_empty_result_semester">No schedule found for %s.\nYou may try to find session schedule.\nClick$icon$ and set \"Use session schedule\" to True</string>
     <string name="schedule_empty_result_session">No schedule found for %s.\nYou may try to find semester schedule.\nClick$icon$ and set \"Use session schedule\" to False</string>
     <string name="no_internet_connection">No internet connection</string>
     <string name="loading_error">Loading error</string>
@@ -103,4 +102,7 @@
         <item>student</item>
         <item>teacher</item>
     </string-array>
+    <string name="schedule_empty_result_semester">No schedule found for %s. You may try to find session schedule. Click$icon$ and set \"Use session schedule\" to True</string>
+    <string name="use_session_schedule">Use session schedule</string>
+    <string name="notifications_list_style">Notifications list style</string>
 </resources>

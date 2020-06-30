@@ -6,7 +6,7 @@
         app:iconSpaceReserved="false">
         <SwitchPreferenceCompat
             app:key="is_session"
-            app:title="Use session schedule"
+            app:title="@string/use_session_schedule"
             app:iconSpaceReserved="false"
             app:defaultValue="false"/>
         <Preference
@@ -33,7 +33,7 @@
 
         <ListPreference
             app:key="target_type"
-            app:title="Notifications list style"
+            app:title="@string/notifications_list_style"
             app:dependency="enable_notifications"
             app:defaultValue="student"
             app:entries="@array/target_type_entries"

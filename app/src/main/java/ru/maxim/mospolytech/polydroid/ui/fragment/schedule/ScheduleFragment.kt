@@ -224,7 +224,6 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView,
     override fun drawSchedule(schedule: Schedule, isSession: Boolean) {
         scheduleListHost.removeAllViews()
         if (isSession) {
-            schedule.grid.map { day -> day.mapIndexed { index, pos -> pos.map { lesson -> lesson.dayOfWeek = index } } }
             val flatLessonsList = schedule.grid.flatMap { day -> day.flatten() }.sortedBy { lesson -> lesson.dateFrom }
 
             val firstSessionDate = Calendar.getInstance().apply { time = Date(flatLessonsList.first().dateFrom) }
@@ -269,9 +268,9 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView,
         if (getLessonsCount(schedule, false) == 0){
             scheduleMessageHolder.text = SpannableStringBuilder().apply {
                 val message: String = if (PreferencesManager.isSession) {
-                    getString(R.string.schedule_empty_result_session, "${schedule.type} ${schedule.title}")
+                    getString(R.string.schedule_empty_result_session, schedule.title)
                 } else {
-                    getString(R.string.schedule_empty_result_semester, "${schedule.type} ${schedule.title}")
+                    getString(R.string.schedule_empty_result_semester, schedule.title)
                 }
                 append(message.replace("\$icon\$", ""))
                 setSpan(
@@ -403,7 +402,7 @@ class ScheduleFragment : MvpAppCompatFragment(), ScheduleView,
                     text = classroomsString
                 }
 
-                itemLessonTitle.text = lesson.name
+                itemLessonTitle.text = "${lesson.name}(${lesson.type})"
 
                 StringBuilder().apply {
                     lesson.teachers.forEachIndexed { index, teacher ->

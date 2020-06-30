@@ -14,7 +14,7 @@ data class Lesson(
     @SerializedName("date_to")
     val dateTo: Long,
     @SerializedName("day_of_week")
-    var dayOfWeek: Int?,
+    var dayOfWeek: String?,
     val number: Int,
     val week: String
 )

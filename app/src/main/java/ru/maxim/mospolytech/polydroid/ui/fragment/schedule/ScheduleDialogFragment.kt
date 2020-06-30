@@ -15,6 +15,7 @@ import androidx.fragment.app.DialogFragment
 import kotlinx.android.synthetic.main.fragment_schedule_dialog.*
 import ru.maxim.mospolytech.polydroid.R
 import ru.maxim.mospolytech.polydroid.model.SearchObject
+import ru.maxim.mospolytech.polydroid.repository.local.PreferencesManager
 
 class ScheduleDialogFragment : DialogFragment() {
 
@@ -40,7 +41,8 @@ class ScheduleDialogFragment : DialogFragment() {
                     else -> 0
                 }
                 setCompoundDrawablesWithIntrinsicBounds(icon, 0, 0, 0)
-                val query = "schedule/${it.getType()}/${it.id}"
+                val query = "schedule/${it.getType()}/${it.id}?" +
+                        "${PreferencesManager.isSessionKey}=${PreferencesManager.isSession}"
                 setOnClickListener {
                     onItemClickListener.onItemClick(query)
                     dialog?.dismiss()
